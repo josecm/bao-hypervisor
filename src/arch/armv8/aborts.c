@@ -96,8 +96,40 @@ void smc64_handler(uint32_t iss, uint64_t far, uint64_t il)
     cpu.vcpu->regs->elr_el2 += pc_step;
 }
 
-void sysreg_handler(uint32_t iss, uint64_t far, uint64_t il)
-{
+enum {INJECT_SGI};
+
+void inter_vm_irq_handler(uint32_t event, uint64_t data) {
+    if(event == INJECT_SGI) {
+        interrupts_vm_inject(cpu.vcpu->vm, data);
+    }
+}
+
+CPU_MSG_HANDLER(inter_vm_irq_handler, INTER_VM_IRQ);
+
+void hvc64_handler(uint32_t iss, uint64_t far, uint64_t il) {
+
+    uint64_t vmid = vcpu_readreg(cpu.vcpu, 0);
+
+    switch (iss) {
+        case 0x1000:
+            INFO("Guest requested CPU%lu id.", cpu.id);
+            vcpu_writereg(cpu.vcpu, 0, cpu.vcpu->vm->id); 	
+            break;
+        case 0x3331:
+            INFO("Sending IPI 6 from VM %ld to VM %lu.", cpu.vcpu->vm->id, vmid);
+            extern uint64_t vm_master_ids[];
+            uint64_t target_cpuid = vm_master_ids[vmid]; 
+            cpu_msg_t msg = { INTER_VM_IRQ, INJECT_SGI, 6}; 
+            cpu_send_msg(target_cpuid, &msg);
+            break;
+        default:
+            ERROR("Unknown hypercall Instruction Specific Syndrome: %ld on CPU%lu", iss, cpu.id);
+            break;
+    }
+
+}
+
+void sysreg_handler(uint32_t iss, uint64_t far, uint64_t il) {
     uint64_t reg_addr = iss & ESR_ISS_SYSREG_ADDR;
     emul_handler_t handler = vm_emul_get_reg(cpu.vcpu->vm, reg_addr);
     if(handler != NULL){
@@ -123,6 +155,7 @@ void sysreg_handler(uint32_t iss, uint64_t far, uint64_t il)
 
 abort_handler_t abort_handlers[64] = {[ESR_EC_DALEL] = aborts_data_lower,
                                       [ESR_EC_SMC64] = smc64_handler,
+                                      [ESR_EC_HVC64] = hvc64_handler,
                                       [ESR_EC_SYSRG] = sysreg_handler};
 
 void aborts_sync_handler()

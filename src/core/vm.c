@@ -29,6 +29,8 @@ struct emul_node {
     };
 };
 
+int64_t vm_master_ids[2];
+
 static void vm_master_init(vm_t* vm, const vm_config_t* config, uint64_t vm_id)
 {
     vm->master = cpu.id;
@@ -42,6 +44,8 @@ static void vm_master_init(vm_t* vm, const vm_config_t* config, uint64_t vm_id)
 
     list_init(&vm->emul_list);
     objcache_init(&vm->emul_oc, sizeof(struct emul_node), SEC_HYP_VM, false);
+
+    vm_master_ids[vm_id] = cpu.id;
 }
 
 void vm_cpu_init(vm_t* vm)
