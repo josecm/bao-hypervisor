@@ -41,6 +41,9 @@ enum irq_res interrupts_handle(uint64_t int_id);
 void interrupts_vm_assign(vm_t *vm, uint64_t id);
 void interrupts_vm_inject(vcpu_t* vcpu, uint64_t id);
 
+void interrupts_set_shared(uint64_t id);
+bool interrupts_is_shared(uint64_t id);
+
 /* Must be implemented by architecture */
 
 void interrupts_arch_init();
