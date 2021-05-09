@@ -24,6 +24,7 @@
 #include <objcache.h>
 #include <mem.h>
 #include <cache.h>
+#include <vmstack.h>
 
 enum {PSCI_MSG_ON};
 
@@ -33,27 +34,30 @@ extern void psci_boot_entry(uint64_t x0);
 	SMC Trapping
 --------------------------------- */
 
-void psci_wake_from_off(){
+void psci_wake_from_off(uint64_t vmid){
   
-    if(cpu.vcpu == NULL){
+    vcpu_t *vcpu = cpu_get_vcpu(vmid);
+
+    if(cpu.vcpu == NULL){   
         return;
     }
 
     /* update vcpu.psci_ctx */
-    spin_lock(&cpu.vcpu->arch.psci_ctx.lock);
-    if(cpu.vcpu->arch.psci_ctx.state == PSCI_OFF){
-        vcpu_arch_reset(cpu.vcpu, cpu.vcpu->arch.psci_ctx.entrypoint);
-        cpu.vcpu->arch.psci_ctx.state = PSCI_ON;
-        cpu.vcpu->regs->x[0] = cpu.vcpu->arch.psci_ctx.context_id;
+    spin_lock(&vcpu->arch.psci_ctx.lock);
+    if(vcpu->arch.psci_ctx.state == PSCI_OFF){
+        vcpu_arch_reset(vcpu, vcpu->arch.psci_ctx.entrypoint);
+        if(vcpu == cpu.vcpu) vcpu_restore_state(cpu.vcpu);
+        vcpu->arch.psci_ctx.state = PSCI_ON;
+        vcpu->regs->x[0] = vcpu->arch.psci_ctx.context_id;
     }
-    spin_unlock(&cpu.vcpu->arch.psci_ctx.lock);
+    spin_unlock(&vcpu->arch.psci_ctx.lock);
 }
 
 void psci_cpumsg_handler(uint32_t event, uint64_t data){
 
     switch(event){
         case PSCI_MSG_ON:
-            psci_wake_from_off();
+            psci_wake_from_off(data);
         break;
     }
 }
@@ -70,14 +74,19 @@ int64_t psci_cpu_suspend_handler(uint64_t power_state, uintptr_t entrypoint,
      */ 
     int state_type = power_state & PSCI_STATE_TYPE_BIT;
     int64_t ret;
+    vcpu_t* vcpu = cpu.vcpu;
 
     if(state_type){
         //PSCI_STATE_TYPE_POWERDOWN:
-        spin_lock(&cpu.vcpu->arch.psci_ctx.lock);
-        cpu.vcpu->arch.psci_ctx.entrypoint = entrypoint;
-        cpu.vcpu->arch.psci_ctx.context_id = context_id;
-        spin_unlock(&cpu.vcpu->arch.psci_ctx.lock);
-        ret = psci_power_down(PSCI_WAKEUP_POWERDOWN);
+        spin_lock(&vcpu->arch.psci_ctx.lock);
+        vcpu->arch.psci_ctx.entrypoint = entrypoint;
+        vcpu->arch.psci_ctx.context_id = context_id;
+        spin_unlock(&vcpu->arch.psci_ctx.lock);
+        if(vmstack_pop() == NULL){
+            ret = psci_power_down(PSCI_WAKEUP_POWERDOWN);
+        } else {
+            ret = PSCI_E_SUCCESS;
+        }
     } else {
         //PSCI_STATE_TYPE_STANDBY:
         /**
@@ -88,7 +97,9 @@ int64_t psci_cpu_suspend_handler(uint64_t power_state, uintptr_t entrypoint,
          * wfi 
          */
         //ret = psci_standby();
-        asm volatile("wfi\n\r");
+        if(vmstack_pop() == NULL){
+            asm volatile("wfi\n\r");
+        }
         ret = PSCI_E_SUCCESS;
     }
 
@@ -106,15 +117,22 @@ int64_t psci_cpu_off_handler(void)
 
     spin_lock(&cpu.vcpu->arch.psci_ctx.lock);
     cpu.vcpu->arch.psci_ctx.state = PSCI_OFF;
+    cpu.vcpu->state = VCPU_OFF;
     spin_unlock(&cpu.vcpu->arch.psci_ctx.lock);
 
-    cpu_idle();
+    if(vmstack_pop() == NULL){
 
-    spin_lock(&cpu.vcpu->arch.psci_ctx.lock);
-    cpu.vcpu->arch.psci_ctx.state = PSCI_ON;
-    spin_unlock(&cpu.vcpu->arch.psci_ctx.lock);
+        cpu_idle();
 
-    return PSCI_E_DENIED;
+        spin_lock(&cpu.vcpu->arch.psci_ctx.lock);
+        cpu.vcpu->arch.psci_ctx.state = PSCI_ON;
+        cpu.vcpu->state = VCPU_ACTIVE;
+        spin_unlock(&cpu.vcpu->arch.psci_ctx.lock);
+
+        return PSCI_E_DENIED;
+    }
+
+    return PSCI_E_SUCCESS;
 }
 
 int64_t psci_cpu_on_handler(uint64_t target_cpu, uintptr_t entrypoint,
@@ -129,13 +147,13 @@ int64_t psci_cpu_on_handler(uint64_t target_cpu, uintptr_t entrypoint,
         bool already_on = true;
         spin_lock(&cpu.vcpu->arch.psci_ctx.lock);
         if(target_vcpu->arch.psci_ctx.state == PSCI_OFF){
-            target_vcpu->arch.psci_ctx.state = ON_PENDING;
+            //target_vcpu->arch.psci_ctx.state = ON_PENDING;
             target_vcpu->arch.psci_ctx.entrypoint = entrypoint;
             target_vcpu->arch.psci_ctx.context_id = context_id;
             fence_sync_write();
             already_on = false;
         } 
-        spin_unlock(&cpu.vcpu->arch.psci_ctx.lock);
+
 
         if(already_on){
             return PSCI_E_ALREADY_ON;
@@ -143,8 +161,9 @@ int64_t psci_cpu_on_handler(uint64_t target_cpu, uintptr_t entrypoint,
 
         uint64_t pcpuid = vm_translate_to_pcpuid(vm, target_vcpu->id);
 
-        cpu_msg_t msg = {PSCI_CPUSMG_ID, PSCI_MSG_ON};
+        cpu_msg_t msg = {PSCI_CPUSMG_ID, PSCI_MSG_ON, vm->id};
         cpu_send_msg(pcpuid, &msg);
+        spin_unlock(&cpu.vcpu->arch.psci_ctx.lock);
 
         ret = PSCI_E_SUCCESS;
 
@@ -261,6 +280,7 @@ static void psci_save_state(uint64_t wakeup_reason){
     cache_flush_range(&cpu.arch.psci_off_state, sizeof(cpu.arch.psci_off_state));
 
     gicc_save_state(&cpu.arch.psci_off_state.gicc_state);
+    vcpu_save_state(cpu.vcpu);
 }
 
 
@@ -272,6 +292,7 @@ static void psci_restore_state(){
      */
     
     gicc_restore_state(&cpu.arch.psci_off_state.gicc_state);
+    vcpu_restore_state(cpu.vcpu);
 }
 
 void psci_wake_from_powerdown(){
@@ -292,7 +313,6 @@ void psci_wake_from_idle(){
 }
 
 void (*psci_wake_handlers[PSCI_WAKEUP_NUM])(void) = {
-    [PSCI_WAKEUP_CPU_OFF] = psci_wake_from_off,
     [PSCI_WAKEUP_POWERDOWN] = psci_wake_from_powerdown,
     [PSCI_WAKEUP_IDLE] = psci_wake_from_idle,
 };

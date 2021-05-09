@@ -95,7 +95,6 @@ typedef struct {
 } __attribute__((packed, aligned(8))) psci_off_state_t;
 
 enum wakeup_reason {
-    PSCI_WAKEUP_CPU_OFF,
     PSCI_WAKEUP_POWERDOWN,
     PSCI_WAKEUP_IDLE,
     PSCI_WAKEUP_NUM
