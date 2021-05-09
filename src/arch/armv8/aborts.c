@@ -67,13 +67,13 @@ void aborts_data_lower(uint32_t iss, uint64_t far, uint64_t il)
 
         if (handler(&emul)) {
             uint64_t pc_step = 2 + (2 * il);
-            cpu.vcpu->regs->elr_el2 += pc_step;
+            vcpu_writepc(cpu.vcpu, vcpu_readpc(cpu.vcpu) + pc_step);
         } else {
             ERROR("data abort emulation failed (0x%x)", far);
         }
     } else {
         ERROR("no emulation handler for abort(0x%x at 0x%x)", far,
-              cpu.vcpu->regs->elr_el2);
+              vcpu_readpc(cpu.vcpu));
     }
 }
 
@@ -94,7 +94,7 @@ void smc64_handler(uint32_t iss, uint64_t far, uint64_t il)
 
     vcpu_writereg(cpu.vcpu, 0, ret);
     uint64_t pc_step = 2 + (2 * il);
-    cpu.vcpu->regs->elr_el2 += pc_step;
+    vcpu_writepc(cpu.vcpu, vcpu_readpc(cpu.vcpu) + pc_step);
 }
 
 void hvc64_handler(uint32_t iss, uint64_t far, uint64_t il)
@@ -129,13 +129,13 @@ void sysreg_handler(uint32_t iss, uint64_t far, uint64_t il)
 
         if (handler(&emul)) {
             uint64_t pc_step = 2 + (2 * il);
-            cpu.vcpu->regs->elr_el2 += pc_step;
+            vcpu_writepc(cpu.vcpu, vcpu_readpc(cpu.vcpu) + pc_step);
         } else {
             ERROR("register access emulation failed (0x%x)", reg_addr);
         }
     } else {
         ERROR("no emulation handler for register access (0x%x at 0x%x)", reg_addr,
-              cpu.vcpu->regs->elr_el2);
+              vcpu_readpc(cpu.vcpu));
     }
 }
 

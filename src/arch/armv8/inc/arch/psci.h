@@ -77,7 +77,7 @@ typedef struct {
     spinlock_t lock;
     uintptr_t entrypoint;
     uintptr_t context_id;
-    enum { ON, OFF, ON_PENDING } state;
+    enum {PSCI_ON, PSCI_OFF, ON_PENDING} state;
 } psci_ctx_t;
 
 typedef struct {

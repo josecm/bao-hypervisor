@@ -68,4 +68,6 @@ void vmm_arch_init()
                    HCR_TSC_BIT; /* trap smc */
 
     MSR(HCR_EL2, hcr);
+    MSR(HSTR_EL2, 0);
+    MSR(CPTR_EL2, 0);
 }

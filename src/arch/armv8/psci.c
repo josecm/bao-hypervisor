@@ -41,9 +41,9 @@ void psci_wake_from_off(){
 
     /* update vcpu.psci_ctx */
     spin_lock(&cpu.vcpu->arch.psci_ctx.lock);
-    if(cpu.vcpu->arch.psci_ctx.state == ON_PENDING){
+    if(cpu.vcpu->arch.psci_ctx.state == PSCI_OFF){
         vcpu_arch_reset(cpu.vcpu, cpu.vcpu->arch.psci_ctx.entrypoint);
-        cpu.vcpu->arch.psci_ctx.state = ON;
+        cpu.vcpu->arch.psci_ctx.state = PSCI_ON;
         cpu.vcpu->regs->x[0] = cpu.vcpu->arch.psci_ctx.context_id;
     }
     spin_unlock(&cpu.vcpu->arch.psci_ctx.lock);
@@ -105,13 +105,13 @@ int64_t psci_cpu_off_handler(void)
      */
 
     spin_lock(&cpu.vcpu->arch.psci_ctx.lock);
-    cpu.vcpu->arch.psci_ctx.state = OFF;
+    cpu.vcpu->arch.psci_ctx.state = PSCI_OFF;
     spin_unlock(&cpu.vcpu->arch.psci_ctx.lock);
 
     cpu_idle();
 
     spin_lock(&cpu.vcpu->arch.psci_ctx.lock);
-    cpu.vcpu->arch.psci_ctx.state = ON;
+    cpu.vcpu->arch.psci_ctx.state = PSCI_ON;
     spin_unlock(&cpu.vcpu->arch.psci_ctx.lock);
 
     return PSCI_E_DENIED;
@@ -128,7 +128,7 @@ int64_t psci_cpu_on_handler(uint64_t target_cpu, uintptr_t entrypoint,
 
         bool already_on = true;
         spin_lock(&cpu.vcpu->arch.psci_ctx.lock);
-        if(target_vcpu->arch.psci_ctx.state == OFF){
+        if(target_vcpu->arch.psci_ctx.state == PSCI_OFF){
             target_vcpu->arch.psci_ctx.state = ON_PENDING;
             target_vcpu->arch.psci_ctx.entrypoint = entrypoint;
             target_vcpu->arch.psci_ctx.context_id = context_id;
@@ -159,7 +159,7 @@ int64_t psci_cpu_on_handler(uint64_t target_cpu, uintptr_t entrypoint,
 int64_t psci_affinity_info_handler(uint64_t target_affinity, 
                                                 uint64_t lowest_affinity_level)
 {
-    /* return ON, if at least one core in the affinity instance: has been 
+    /* return PSCI_ON, if at least one core in the affinity instance: has been 
     enabled with a call to CPU_ON, and that core has not called CPU_OFF */
 
     /* return off if all of the cores in the affinity instance have called 

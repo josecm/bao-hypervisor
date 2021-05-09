@@ -69,6 +69,7 @@ typedef struct vcpu {
     uint64_t id;
     uint32_t phys_id;
     bool active;
+    enum {VCPU_OFF, VCPU_INACTIVE, VCPU_ACTIVE, VCPU_STACKED} state;
 
     vm_t* vm;
 
@@ -121,5 +122,7 @@ uint64_t vcpu_readpc(vcpu_t* vcpu);
 void vcpu_writepc(vcpu_t* vcpu, uint64_t pc);
 void vcpu_arch_run(vcpu_t* vcpu);
 void vcpu_arch_reset(vcpu_t* vcpu, uint64_t entry);
+void vcpu_save_state(vcpu_t* vcpu);
+void vcpu_restore_state(vcpu_t* vcpu);
 
 #endif /* __VM_H__ */

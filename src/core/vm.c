@@ -78,6 +78,7 @@ vcpu_t* vm_vcpu_init(vm_t* vm, const vm_config_t* config)
     vcpu->regs = (struct arch_regs*)(vcpu->stack + sizeof(vcpu->stack) -
                                      sizeof(*vcpu->regs));
 
+    vcpu->state = VCPU_INACTIVE;
     vcpu->parent = NULL;
 
     list_init(&vcpu->children);
@@ -411,10 +412,12 @@ __attribute__((weak)) uint64_t vm_translate_to_vcpu_mask(vm_t* vm,
     return pmask;
 }
 
-void vcpu_run(vcpu_t* vcpu)
-{
-    cpu.vcpu->active = true;
-    vcpu_arch_run(vcpu);
+void vcpu_run(vcpu_t *vcpu){
+    if(vcpu->state == VCPU_ACTIVE){
+        vcpu_arch_run(vcpu);
+    } else {
+        ERROR("trying to run inactive vcpu");
+    }
 }
 
 vcpu_t* vcpu_get_child(vcpu_t *vcpu, int index){
