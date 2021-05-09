@@ -17,32 +17,46 @@
 
 #define adjust_ptr(p, o) ((p) = (p) ? (typeof(p))(  (void*)(p) + (uint64_t)(o)) : (p))
 
-void config_adjust_to_va(struct config *config, uint64_t phys)
+void config_vm_adjust_to_va(vm_config_t *vm_config, struct config *config, uint64_t phys)
 {
-    adjust_ptr(config->shmemlist, config);
+    config_arch_vm_adjust_to_va(vm_config, config, phys);
 
     for (int i = 0; i < config->vmlist_size; i++) {
-        adjust_ptr(config->vmlist[i].image.load_addr, phys);
+        adjust_ptr(vm_config->image.load_addr, phys);
 
-	    adjust_ptr(config->vmlist[i].platform.regions, config);
+	    adjust_ptr(vm_config->platform.regions, config);
 
-	    if(adjust_ptr(config->vmlist[i].platform.devs, config)){
-	        for (int j = 0; j < config->vmlist[i].platform.dev_num; j++) {
-	    	    adjust_ptr(config->vmlist[i].platform.devs[j].interrupts, config);
+	    if(adjust_ptr(vm_config->platform.devs, config)){
+	        for (int j = 0; j < vm_config->platform.dev_num; j++) {
+	    	    adjust_ptr(vm_config->platform.devs[j].interrupts, config);
 	        }
 	    }
 
-	    if(adjust_ptr(config->vmlist[i].platform.ipcs, config)){
-	        for (int j = 0; j < config->vmlist[i].platform.ipc_num; j++) {
-	    	    adjust_ptr(config->vmlist[i].platform.ipcs[j].interrupts, config);
+	    if(adjust_ptr(vm_config->platform.ipcs, config)){
+	        for (int j = 0; j < vm_config->platform.ipc_num; j++) {
+	    	    adjust_ptr(vm_config->platform.ipcs[j].interrupts, config);
 	        }
 	    }
+
+        adjust_ptr(vm_config->children, config);
+        for (int i = 0; i < vm_config->children_num; i++) {
+            adjust_ptr(vm_config->children[i], config);
+            config_vm_adjust_to_va(vm_config->children[i], config, phys);
+        }
     }
-
-    config_arch_adjust_to_va(config, phys);
 }
 
 bool config_is_builtin() {
     extern uint8_t _config_start, _config_end;
     return &_config_start != &_config_end;
+}
+
+void config_adjust_to_va(struct config *config, uint64_t phys)
+{
+    adjust_ptr(config->shmemlist, config);
+
+    for (int i = 0; i < config->vmlist_size; i++) {
+        config->vmlist[i] = (void *)config->vmlist[i] + (uint64_t)config;
+        config_vm_adjust_to_va(config->vmlist[i], config, phys);
+    }
 }

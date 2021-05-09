@@ -68,7 +68,7 @@ void vmm_init()
      * Assign cpus according to vm affinity.
      */
     for (int i = 0; i < vm_config_ptr->vmlist_size && !assigned; i++) {
-        if (vm_config_ptr->vmlist[i].cpu_affinity & (1UL << cpu.id)) {
+        if (vm_config_ptr->vmlist[i]->cpu_affinity & (1UL << cpu.id)) {
             spin_lock(&vm_assign[i].lock);
             if (!vm_assign[i].master) {
                 vm_assign[i].master = true;
@@ -78,7 +78,7 @@ void vmm_init()
                 assigned = true;
                 vm_id = i;
             } else if (vm_assign[i].ncpus <
-                       vm_config_ptr->vmlist[i].platform.cpu_num) {
+                       vm_config_ptr->vmlist[i]->platform.cpu_num) {
                 assigned = true;
                 vm_assign[i].ncpus++;
                 vm_assign[i].cpus |= (1UL << cpu.id);
@@ -97,7 +97,7 @@ void vmm_init()
         for (int i = 0; i < vm_config_ptr->vmlist_size && !assigned; i++) {
             spin_lock(&vm_assign[i].lock);
             if (vm_assign[i].ncpus <
-                vm_config_ptr->vmlist[i].platform.cpu_num) {
+                vm_config_ptr->vmlist[i]->platform.cpu_num) {
                 if (!vm_assign[i].master) {
                     vm_assign[i].master = true;
                     vm_assign[i].ncpus++;
@@ -119,7 +119,7 @@ void vmm_init()
     cpu_sync_barrier(&cpu_glb_sync);
 
     if (assigned) {
-        vm_config = &vm_config_ptr->vmlist[vm_id];
+        vm_config = vm_config_ptr->vmlist[vm_id];
         if (master) {
             size_t vm_npages = NUM_PAGES(sizeof(vm_t));
             void* va = mem_alloc_vpage(&cpu.as, SEC_HYP_VM, (void*)BAO_VM_BASE,

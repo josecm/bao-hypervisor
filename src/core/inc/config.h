@@ -79,6 +79,10 @@ typedef struct vm_config {
      */
     uint64_t colors;
 
+
+    size_t children_num;
+    struct vm_config* *children;
+
     /**
      * A description of the virtual platform available to the guest, i.e.,
      * the virtual machine itself.
@@ -124,12 +128,12 @@ extern struct config {
     size_t vmlist_size;
 
     /* Array list with VM configuration */
-    vm_config_t vmlist[];
+    vm_config_t* vmlist[];
 
 } config __attribute__((section(".config")));
 
 void config_adjust_to_va(struct config *config, uint64_t phys);
-void config_arch_adjust_to_va(struct config *config, uint64_t phys);
+void config_arch_vm_adjust_to_va(vm_config_t *vm_config, struct config *config, uint64_t phys);
 bool config_is_builtin();
 
 #define adjust_ptr(p, o)\
