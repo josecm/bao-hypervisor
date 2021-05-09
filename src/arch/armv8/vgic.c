@@ -58,6 +58,13 @@ static inline void vgic_lr_wr(vcpu_t* vcpu, uint64_t lr, uint64_t val){
     } else {
         vcpu->arch.vgic_priv.gich.LR[lr] = val;
         bitmap_set((bitmap_t) &vcpu->arch.vgic_priv.gich.ELSR, lr);
+        /**
+         * TODO: take this decision out of the vgic and make it more arch
+         * indepenent
+         */
+        if(vcpu->state == VCPU_STACKED && (val & GICH_LR_STATE_PND)){
+            vmstack_unwind(vcpu);
+        }
     }
 }
 

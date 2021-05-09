@@ -20,10 +20,11 @@
 #include <vm.h>
 #include <bitmap.h>
 #include <string.h>
+#include <vmstack.h>
 
 BITMAP_ALLOC(hyp_interrupt_bitmap, MAX_INTERRUPTS);
 BITMAP_ALLOC(global_interrupt_bitmap, MAX_INTERRUPTS);
-
+uint64_t interrupt_owner[MAX_INTERRUPTS];
 irq_handler_t interrupt_handlers[MAX_INTERRUPTS];
 
 inline void interrupts_cpu_sendipi(uint64_t target_cpu, uint64_t ipi_id)
@@ -64,13 +65,29 @@ static inline bool interrupt_is_reserved(int int_id)
 
 inline void interrupts_vm_inject(vcpu_t* vcpu, uint64_t id) 
 {
-    interrupts_arch_vm_inject(vcpu, id);
+   interrupts_arch_vm_inject(vcpu, id);
+   if(vcpu != cpu.vcpu && vcpu->state == VCPU_STACKED){
+       vmstack_unwind(vcpu);
+   }
+}
+
+static inline uint64_t interrupts_get_vmid(uint64_t int_id)
+{
+    return interrupt_owner[int_id];
 }
 
 enum irq_res interrupts_handle(uint64_t int_id)
 {
-    if (vm_has_interrupt(cpu.vcpu->vm, int_id)) {
-        interrupts_vm_inject(cpu.vcpu, int_id);
+    vcpu_t *vcpu = NULL;
+    if(cpu.vcpu->vm->id == interrupts_get_vmid(int_id)){
+        vcpu = cpu.vcpu;
+    } else {
+        vcpu = cpu_get_vcpu(interrupts_get_vmid(int_id));
+    }
+
+    if((vcpu != NULL) && vm_has_interrupt(vcpu->vm, int_id)){
+
+        interrupts_vm_inject(vcpu, int_id);
 
         return FORWARD_TO_VM;
 
@@ -91,7 +108,7 @@ void interrupts_vm_assign(vm_t *vm, uint64_t id)
     }
 
     interrupts_arch_vm_assign(vm, id);
-
+    interrupt_owner[id] = vm->id;
     bitmap_set(vm->interrupt_bitmap, id);
     bitmap_set(global_interrupt_bitmap, id);
 }
