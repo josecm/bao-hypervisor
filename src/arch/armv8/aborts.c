@@ -21,6 +21,10 @@
 #include <arch/psci.h>
 #include <hypercall.h>
 
+/** hypercall handler declarations */
+#include <ipc.h>
+#include <vmstack.h>
+
 typedef void (*abort_handler_t)(uint32_t, uint64_t, uint64_t);
 
 void internal_abort_handler(uint64_t gprs[]) {
@@ -106,13 +110,18 @@ void hvc64_handler(uint32_t iss, uint64_t far, uint64_t il)
     uint64_t hvc_fid = (x0 >> 16) & 0xffff;
     int64_t ret = -HC_E_INVAL_ID;
 
+    vcpu_t *vcpu = cpu.vcpu;
+
     switch(hvc_fid){
         case HC_IPC:
             ret = ipc_hypercall(x0 & 0xffff, x1, x2, x3);
         break;
+        case HC_VMSTACK:
+            ret = vmstack_hypercall(x0 & 0xffff, x1, x2, x3);
+        break;
     }
 
-    vcpu_writereg(cpu.vcpu, 0, ret);
+    vcpu_writereg(vcpu, 0, ret);
 }
 
 void sysreg_handler(uint32_t iss, uint64_t far, uint64_t il)

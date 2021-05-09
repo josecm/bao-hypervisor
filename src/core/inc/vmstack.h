@@ -24,5 +24,6 @@
 void vmstack_push(vcpu_t* vcpu);
 vcpu_t* vmstack_pop();
 void vmstack_unwind(vcpu_t* vcpu);
+int64_t vmstack_hypercall(uint64_t id, uint64_t arg0, uint64_t arg1, uint64_t arg2);
 
 #endif /* VMSTACK_H */

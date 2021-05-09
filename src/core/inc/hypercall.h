@@ -18,7 +18,8 @@
 
 enum {
     HC_INVAL = 0,
-    HC_IPC = 1
+    HC_IPC = 1,
+    HC_VMSTACK = 2,
 };
 
 enum {
