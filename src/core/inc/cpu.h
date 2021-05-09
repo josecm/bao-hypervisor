@@ -42,6 +42,7 @@ typedef struct cpu {
     addr_space_t as;
 
     vcpu_t* vcpu;
+    list_t vcpus;
 
     cpu_arch_t arch;
 
@@ -119,6 +120,8 @@ void cpu_msg_handler();
 void cpu_msg_set_handler(uint64_t id, cpu_msg_handler_t handler);
 void cpu_idle();
 void cpu_idle_wakeup();
+void cpu_add_vcpu(vcpu_t * vcpu);
+vcpu_t* cpu_get_vcpu(uint64_t vmid);
 
 void cpu_arch_init(uint64_t cpu_id, uint64_t load_addr);
 void cpu_arch_idle();

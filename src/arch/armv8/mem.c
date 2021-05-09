@@ -27,7 +27,7 @@ void as_arch_init(addr_space_t* as)
      * the PT_VM_REC_IND.
      */
     if (as->type == AS_HYP_CPY || as->type == AS_VM) {
-        index = PT_VM_REC_IND;
+        index = (BAO_VAS_BASE >> 39) - as->id;
     } else {
         index = PT_CPU_REC_IND;
     }

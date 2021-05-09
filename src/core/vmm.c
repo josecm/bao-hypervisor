@@ -26,6 +26,91 @@
 
 struct config* vm_config_ptr;
 
+struct partition * const partition = (struct partition*) BAO_VM_BASE;
+
+static void* vmm_alloc_vm_struct(){
+    size_t vm_npages = ALIGN(sizeof(vm_t), PAGE_SIZE)/PAGE_SIZE;
+    void* va = 
+        mem_alloc_vpage(&cpu.as, SEC_HYP_VM, NULL, vm_npages);
+    mem_map(&cpu.as, va, NULL, vm_npages, PTE_HYP_FLAGS);
+    memset(va, 0, vm_npages*PAGE_SIZE);
+    return va;
+}
+
+uint64_t vmm_alloc_vmid(){
+    static uint64_t id = 0;
+    static spinlock_t lock = SPINLOCK_INITVAL;
+
+    uint64_t vmid;
+    spin_lock(&lock);
+    vmid = ++id; // no vmid 0
+    spin_unlock(&lock);
+
+    return vmid;
+}   
+
+static vcpu_t* vmm_create_vms(vm_config_t* config, vcpu_t* parent){
+
+    if(cpu.id == partition->master){
+        partition->init.curr_vm = vmm_alloc_vm_struct();
+        partition->init.ncpus = 0;
+    }
+
+    if(parent){
+        cpu_sync_barrier(&parent->vm->sync);
+    } else {
+        cpu_sync_barrier(&partition->sync);
+    }
+
+    vm_t *vm = partition->init.curr_vm;
+    vcpu_t *vcpu = NULL;
+
+    bool assigned = false;
+    bool master = false;
+
+    spin_lock(&partition->lock);
+    if((partition->init.ncpus < config->platform.cpu_num) &&
+        (1ULL << cpu.id) & config->cpu_affinity){
+        if(partition->init.ncpus == 0)
+            master = true;
+        partition->init.ncpus++;
+        assigned = true;
+    }
+    spin_unlock(&partition->lock);
+
+    if(parent){
+        cpu_sync_barrier(&parent->vm->sync);
+    } else {
+        cpu_sync_barrier(&partition->sync);
+    }
+
+    spin_lock(&partition->lock);
+    if(!assigned && (partition->init.ncpus < config->platform.cpu_num)){
+        if(partition->init.ncpus == 0)
+            master = true;
+        partition->init.ncpus++;
+        assigned = true;
+    }
+    spin_unlock(&partition->lock);
+
+    if(assigned){
+        vcpu = vm_init(vm, config, master);
+        for(int i = 0; i < config->children_num; i++){
+            vm_config_t* child_config = config->children[i];
+            vcpu_t* child = vmm_create_vms(child_config, vcpu); //TODO: do this without recursion
+            if(child != NULL){
+                node_data_t* node = objcache_alloc(&partition->nodes);
+                node->data = child;
+                list_append(&vcpu->children, (node_t*)node);
+            }
+            cpu_sync_barrier(&vm->sync);
+        }
+    }
+
+    return vcpu;
+}
+
+
 void vmm_init()
 {
     if(vm_config_ptr->vmlist_size == 0){
@@ -121,11 +206,14 @@ void vmm_init()
     if (assigned) {
         vm_config = vm_config_ptr->vmlist[vm_id];
         if (master) {
-            size_t vm_npages = NUM_PAGES(sizeof(vm_t));
+            size_t vm_npages = NUM_PAGES(sizeof(struct partition));
             void* va = mem_alloc_vpage(&cpu.as, SEC_HYP_VM, (void*)BAO_VM_BASE,
                                        vm_npages);
             mem_map(&cpu.as, va, NULL, vm_npages, PTE_HYP_FLAGS);
             memset(va, 0, vm_npages * PAGE_SIZE);
+            cpu_sync_init(&partition->sync, vm_assign[vm_id].ncpus);
+            partition->master = cpu.id;
+            objcache_init(&partition->nodes, sizeof(node_data_t), SEC_HYP_VM, true);
             fence_ord_write();
             vm_assign[vm_id].vm_shared_table =
                 *pt_get_pte(&cpu.as.pt, 0, (void*)BAO_VM_BASE);
@@ -146,8 +234,10 @@ void vmm_init()
     ipc_init(vm_config, master);
 
     if (assigned) {
-        vm_init((void*)BAO_VM_BASE, vm_config, master, vm_id);
-        vcpu_run(cpu.vcpu);
+        vcpu_t* root = vmm_create_vms(vm_config_ptr->vmlist[vm_id], NULL);
+	cpu.vcpu = root;
+        cpu_sync_barrier(&partition->sync);
+        vcpu_run(root);
     } else {
         cpu_idle();
     }

@@ -18,9 +18,26 @@
 #define __VMM_H__
 
 #include <bao.h>
+#include <cpu.h>
 #include <vm.h>
+#include <list.h>
+#include <objcache.h>
+#include <interrupts.h>
+
+struct partition {
+    spinlock_t lock;
+    cpu_synctoken_t sync;
+    uint64_t master;
+    struct {
+        vm_t* curr_vm;
+        size_t ncpus;
+    } init;
+    objcache_t nodes;
+    vm_t* interrupts[MAX_INTERRUPTS];
+} extern * const partition;
 
 void vmm_init();
 void vmm_arch_init();
+uint64_t vmm_alloc_vmid();
 
 #endif /* __VMM_H__ */

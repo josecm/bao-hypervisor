@@ -26,6 +26,11 @@ typedef struct {
     spinlock_t lock;
 } list_t;
 
+typedef struct {
+    node_t node;
+    void* data;
+} node_data_t;
+
 #define list_foreach(list, type, nodeptr)                     \
     for (type* nodeptr = ((type*)list.head); nodeptr != NULL; \
          nodeptr = *((type**)nodeptr))
@@ -43,7 +48,7 @@ static inline void list_init(list_t* list)
     }
 }
 
-static inline void list_push(list_t* list, node_t* node)
+static inline void list_append(list_t* list, node_t* node)
 {
     if (list != NULL && node != NULL) {
         *node = NULL;
@@ -55,6 +60,24 @@ static inline void list_push(list_t* list, node_t* node)
 
         if (list->head == NULL) list->head = node;
 
+        spin_unlock(&list->lock);
+    }
+}
+
+static inline void list_push(list_t* list, node_t* node){
+    
+    if(list != NULL && node != NULL){
+        *node = NULL;
+        spin_lock(&list->lock);
+
+        if(list->head != NULL)
+            *node = list->head;
+
+        list->head = node;
+
+        if(list->tail == NULL)
+            list->tail = node;
+        
         spin_unlock(&list->lock);
     }
 }
@@ -79,7 +102,7 @@ static inline node_t* list_pop(list_t* list)
     return (void*)temp;
 }
 
-static inline node_t* list_peek(list_t* list)
+static inline node_t* list_head(list_t* list)
 {
     node_t* temp = NULL;
     if (list != NULL) {

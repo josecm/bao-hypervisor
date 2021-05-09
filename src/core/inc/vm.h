@@ -72,13 +72,16 @@ typedef struct vcpu {
 
     vm_t* vm;
 
+    list_t children;
+    vcpu_t *parent;
+
     uint8_t stack[STACK_SIZE] __attribute__((aligned(STACK_SIZE)));
 } vcpu_t;
 
 extern vm_t vm;
 extern struct config* vm_config_ptr;
 
-void vm_init(vm_t* vm, const vm_config_t* config, bool master, uint64_t vm_id);
+vcpu_t* vm_init(vm_t* vm, const vm_config_t* config, bool master);
 void vm_start(vm_t* vm, uint64_t entry);
 vcpu_t* vm_get_vcpu(vm_t* vm, uint64_t vcpuid);
 void vm_emul_add_mem(vm_t* vm, emul_mem_t* emu);
@@ -89,6 +92,7 @@ void vcpu_init(vcpu_t* vcpu, vm_t* vm, uint64_t entry);
 void vm_msg_broadcast(vm_t* vm, cpu_msg_t* msg);
 uint64_t vm_translate_to_pcpu_mask(vm_t* vm, uint64_t mask, size_t len);
 uint64_t vm_translate_to_vcpu_mask(vm_t* vm, uint64_t mask, size_t len);
+vcpu_t* vcpu_get_child(vcpu_t* vcpu, int index);
 
 static inline int64_t vm_translate_to_pcpuid(vm_t* vm, uint64_t vcpuid)
 {

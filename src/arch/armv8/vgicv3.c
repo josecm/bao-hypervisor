@@ -293,8 +293,9 @@ void vgic_init(vm_t *vm, const struct gic_dscrp *gic_dscrp)
                            .handler = vgicd_emul_handler};
     vm_emul_add_mem(vm, &gicd_emu);
 
-    list_foreach(vm->vcpu_list, vcpu_t, vcpu)
+    list_foreach(vm->vcpu_list, node_data_t, node)
     {
+        vcpu_t *vcpu = node->data;
         uint64_t phy_cpuid = vcpu->phys_id;
         emul_mem_t gicr_emu = {
             .va_base = gic_dscrp->gicr_addr + sizeof(gicr_t) * vcpu->id,
