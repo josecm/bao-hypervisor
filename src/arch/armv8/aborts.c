@@ -99,15 +99,16 @@ void smc64_handler(uint32_t iss, uint64_t far, uint64_t il)
 
 void hvc64_handler(uint32_t iss, uint64_t far, uint64_t il)
 {
-    uint64_t hvc_fid = cpu.vcpu->regs->x[0];
+    uint64_t x0 = cpu.vcpu->regs->x[0];
     uint64_t x1 = cpu.vcpu->regs->x[1];
     uint64_t x2 = cpu.vcpu->regs->x[2];
     uint64_t x3 = cpu.vcpu->regs->x[3];
-
+    uint64_t hvc_fid = (x0 >> 16) & 0xffff;
     int64_t ret = -HC_E_INVAL_ID;
+
     switch(hvc_fid){
         case HC_IPC:
-            ret = ipc_hypercall(x1, x2, x3);
+            ret = ipc_hypercall(x0 & 0xffff, x1, x2, x3);
         break;
     }
 

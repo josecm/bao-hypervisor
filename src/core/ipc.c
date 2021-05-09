@@ -73,7 +73,7 @@ static void ipc_handler(uint32_t event, uint64_t data){
 }
 CPU_MSG_HANDLER(ipc_handler, IPC_CPUSMG_ID);
 
-int64_t ipc_hypercall(uint64_t arg0, uint64_t arg1, uint64_t arg2)
+int64_t ipc_hypercall(uint64_t id, uint64_t arg0, uint64_t arg1, uint64_t arg2)
 {
     uint64_t ipc_id = arg0;
     uint64_t ipc_event = arg1;
