@@ -13,21 +13,16 @@
  *
  */
 
-#ifndef HYPERCALL_H
-#define HYPERCALL_H
+#ifndef VMSTACK_H
+#define VMSTACK_H
 
-enum {
-    HC_INVAL = 0,
-    HC_IPC = 1
-};
+#include <bao.h>
 
-enum {
-    HC_E_SUCCESS = 0,
-    HC_E_FAILURE = 1,
-    HC_E_INVAL_ID = 2,
-    HC_E_INVAL_ARGS = 3
-};
+#include <cpu.h>
+#include <vm.h>
 
-typedef int64_t (*hypercall_handler)(uint64_t arg0, uint64_t arg1, uint64_t arg2);
+void vmstack_push(vcpu_t* vcpu);
+vcpu_t* vmstack_pop();
+void vmstack_unwind(vcpu_t* vcpu);
 
-#endif /* HYPERCALL_H */
+#endif /* VMSTACK_H */

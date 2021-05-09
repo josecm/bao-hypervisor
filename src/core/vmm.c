@@ -23,6 +23,7 @@
 #include <fences.h>
 #include <string.h>
 #include <ipc.h>
+#include <vmstack.h>
 
 struct config* vm_config_ptr;
 
@@ -235,7 +236,7 @@ void vmm_init()
 
     if (assigned) {
         vcpu_t* root = vmm_create_vms(vm_config_ptr->vmlist[vm_id], NULL);
-	cpu.vcpu = root;
+        vmstack_push(root);
         cpu_sync_barrier(&partition->sync);
         vcpu_run(root);
     } else {

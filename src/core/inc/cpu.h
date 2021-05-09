@@ -42,6 +42,7 @@ typedef struct cpu {
     addr_space_t as;
 
     vcpu_t* vcpu;
+    list_t vcpu_stack;
     list_t vcpus;
 
     cpu_arch_t arch;
