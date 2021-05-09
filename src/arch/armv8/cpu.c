@@ -26,6 +26,7 @@ uint64_t CPU_MASTER __attribute__((section(".data")));
 void cpu_arch_init(uint64_t cpuid, uint64_t load_addr)
 {   
     cpu.arch.mpidr = MRS(MPIDR_EL1);
+    list_init(&cpu.arch.vtimer.event_list);
     if (cpuid == CPU_MASTER) {
         /* power on necessary, but still sleeping, secondary cpu cores
          * Assumes CPU zero is doing this */

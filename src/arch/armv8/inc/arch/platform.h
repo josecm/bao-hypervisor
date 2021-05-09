@@ -46,6 +46,10 @@ struct arch_platform {
 
     struct {
         uint64_t base_addr;
+        struct {
+            uint64_t virtual;
+            uint64_t hyp;
+        } irqs;
     } generic_timer;
 
     struct clusters {

@@ -14,6 +14,8 @@
  */
 
 #include <vm.h>
+
+#include <vmm.h>
 #include <page_table.h>
 #include <arch/sysregs.h>
 #include <fences.h>
@@ -136,6 +138,58 @@ void vcpu_arch_run(vcpu_t* vcpu)
     
 }
 
+void vtimer_save_state(vcpu_t* vcpu) {
+
+    uint64_t timer_ctl = MRS(CNTV_CTL_EL0);
+    uint64_t timer_cmp = MRS(CNTV_CVAL_EL0);
+
+    if((timer_ctl & 0x3) == 0x1 && vm_has_interrupt(vcpu->vm, 27) && 
+        vgic_int_get_enabled(vcpu, 27)) {
+
+        vcpu_t *next_vcpu = cpu.arch.vtimer.next_vcpu;
+        if(next_vcpu != NULL){
+            if((next_vcpu->arch.sysregs.vm.cntv_ctl_el0 & 0x3) == 0x1){
+                if(next_vcpu->arch.sysregs.vm.cntv_cval_el0 > timer_cmp){
+                    node_data_t *node = objcache_alloc(&partition->nodes);
+                    node->data = next_vcpu;
+                    list_push(&cpu.arch.vtimer.event_list, (node_t*)node);
+                    cpu.arch.vtimer.next_vcpu = vcpu;
+                    MSR(CNTHP_CTL_EL2, timer_ctl);
+                    MSR(CNTHP_CVAL_EL2, timer_cmp);
+                } 
+            }
+        } else {
+            MSR(CNTHP_CTL_EL2, timer_ctl);
+            MSR(CNTHP_CVAL_EL2, timer_cmp);
+            cpu.arch.vtimer.next_vcpu = vcpu;
+        }
+    }
+}
+
+void vtimer_restore_state(vcpu_t *vcpu) {
+
+    if(!vm_has_interrupt(vcpu->vm, 27)) {
+        gic_set_enable(27, false);
+        return;
+    }
+
+    vgic_hw_commit(vcpu, 27);
+
+    if(cpu.arch.vtimer.next_vcpu == vcpu){
+        node_data_t *node = (node_data_t*) list_pop(&cpu.arch.vtimer.event_list);
+        if(node != NULL){
+            vcpu_t *vcpu = node->data;
+            objcache_free(&partition->nodes, node);
+            cpu.arch.vtimer.next_vcpu = vcpu;
+            MSR(CNTHP_CTL_EL2, vcpu->arch.sysregs.vm.cntv_ctl_el0);
+            MSR(CNTHP_CVAL_EL2, vcpu->arch.sysregs.vm.cntv_cval_el0);
+        } else {
+            cpu.arch.vtimer.next_vcpu = NULL;
+            MSR(CNTHP_CTL_EL2, 0x2);
+        }
+    }
+}
+
 void vcpu_save_state(vcpu_t* vcpu){
     if(vcpu == NULL) return;
     vcpu->arch.sysregs.hyp.elr_el2      = MRS(ELR_EL2);
@@ -164,6 +218,7 @@ void vcpu_save_state(vcpu_t* vcpu){
     vcpu->arch.sysregs.vm.cntv_cval_el0 = MRS(CNTV_CVAL_EL0);
     vcpu->arch.sysregs.vm.cntkctl_el1   = MRS(CNTKCTL_EL1);
     vgic_save_state(vcpu);
+    vtimer_save_state(vcpu);
 }
 
 void vcpu_restore_state(vcpu_t* vcpu){
@@ -197,4 +252,5 @@ void vcpu_restore_state(vcpu_t* vcpu){
     MSR(CNTV_CVAL_EL0, vcpu->arch.sysregs.vm.cntv_cval_el0);
     MSR(CNTKCTL_EL1, vcpu->arch.sysregs.vm.cntkctl_el1);
     vgic_restore_state(vcpu);
+    vtimer_restore_state(vcpu);
 }
