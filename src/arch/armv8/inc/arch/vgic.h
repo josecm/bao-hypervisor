@@ -72,17 +72,24 @@ typedef struct {
 } vgicr_t;
 
 typedef struct {
+    struct {
+        uint64_t ELSR;
+        uint64_t LR[GICH_LR_MAX];
+        uint32_t HCR;
+        uint32_t VMCR;
+        uint32_t APR[GIC_APR_MAX];
+    } gich;
 #if (GIC_VERSION != GICV2)
     vgicr_t vgicr;
 #endif
-    int16_t curr_lrs[GIC_NUM_LIST_REGS];
+    int16_t curr_lrs[GICH_LR_MAX];
     vgic_int_t interrupts[GIC_CPU_PRIV];
 } vgic_priv_t;
 
 void vgic_init(vm_t *vm, const struct gic_dscrp *gic_dscrp);
 void vgic_cpu_init(vcpu_t *vcpu);
 void vgic_set_hw(vm_t *vm, uint64_t id);
-void vgic_inject(vgicd_t *vgicd, uint64_t id, uint64_t source);
+void vgic_inject(vcpu_t *vcpu, uint64_t id, uint64_t source);
 
 /* VGIC INTERNALS */
 
@@ -130,5 +137,10 @@ bool vgic_int_vcpu_is_target(vcpu_t *vcpu, vgic_int_t *interrupt);
 bool vgic_int_has_other_target(vcpu_t *vcpu, vgic_int_t *interrupt);
 uint64_t vgic_int_ptarget_mask(vcpu_t *vcpu, vgic_int_t *interrupt);
 void vgic_inject_sgi(vcpu_t *vcpu, vgic_int_t *interrupt, uint64_t source);
+
+void vgic_save_state(vcpu_t* vcpu);
+void vgic_restore_state(vcpu_t* vcpu);
+bool vgic_int_get_enabled(vcpu_t* vcpu, uint64_t int_id);
+void vgic_hw_commit(vcpu_t* vcpu, uint64_t int_id);
 
 #endif /* __VGIC_H__ */

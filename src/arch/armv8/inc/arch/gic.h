@@ -303,6 +303,8 @@ typedef struct {
 #define GICH_LR_STATE_LEN (2)
 #define GICH_LR_HW_BIT (1U << 31)
 #define GICH_LR_EOI_BIT (1U << 19)
+#define GICH_LR_MAX (64)
+#define GIC_APR_MAX (1)
 #define GICH_NUM_ELRSR (2)
 #else
 #define GICH_LR_VID_OFF (0)
@@ -316,6 +318,8 @@ typedef struct {
 #define GICH_LR_GRP_BIT (1ULL << 60)
 #define GICH_LR_HW_BIT (1ULL << 61)
 #define GICH_LR_EOI_BIT (1ULL << 41)
+#define GICH_LR_MAX (16)
+#define GIC_APR_MAX (4)
 #define GICH_NUM_ELRSR (1)
 #endif
 
@@ -444,13 +448,17 @@ void gicr_set_icfgr(uint64_t int_id, uint8_t cfg, uint32_t gicr_id);
 void gicr_set_act(uint64_t int_id, bool act, uint32_t gicr_id);
 uint64_t gicr_get_prio(uint64_t int_id, uint32_t gicr_id);
 
-uint64_t gich_read_lr(size_t i);
-void gich_write_lr(size_t i, uint64_t val);
+uint64_t gich_read_lr(size_t);
+void gich_write_lr(size_t, uint64_t);
 uint32_t gich_get_hcr();
 void gich_set_hcr(uint32_t);
 uint32_t gich_get_misr();
 uint64_t gich_get_eisr();
 uint64_t gich_get_elrsr();
+uint32_t gich_get_vmcr();
+void gich_set_vmcr(uint32_t);
+uint32_t gich_get_apr(size_t);
+void gich_set_apr(size_t, uint32_t);
 
 void gic_maintenance_handler(uint64_t arg);
 

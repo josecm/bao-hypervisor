@@ -55,7 +55,7 @@ bool vgic_int_has_other_target(vcpu_t *vcpu, vgic_int_t *interrupt)
 uint64_t vgic_int_ptarget_mask(vcpu_t *vcpu, vgic_int_t *interrupt)
 {
     if (vgic_broadcast(vcpu, interrupt)) {
-        return cpu.vcpu->vm->cpus & ~(1U << cpu.vcpu->phys_id);
+        return vcpu->vm->cpus & ~(1U << vcpu->phys_id);
     } else {
         return (1ull << interrupt->phys.route);
     }

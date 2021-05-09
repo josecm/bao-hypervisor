@@ -83,6 +83,33 @@ uint64_t gich_get_elrsr()
     return elsr;
 }
 
+uint32_t gich_get_vmcr() 
+{
+    return gich.VMCR;
+}
+
+void gich_set_vmcr(uint32_t vmcr) 
+{
+    gich.VMCR = vmcr;
+}
+
+uint32_t gich_get_apr(size_t i) 
+{
+     if(i == 0) {
+        return gich.APR;
+    } else {
+        return 0;
+    }   
+}
+
+void gich_set_apr(size_t i, uint32_t val) 
+{
+    if(i == 0) {
+        gich.APR = val;
+    }
+}
+
+
 static inline void gicc_init()
 {
     for (int i = 0; i < gich_num_lrs(); i++) {

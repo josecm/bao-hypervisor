@@ -163,6 +163,7 @@ void vcpu_save_state(vcpu_t* vcpu){
     vcpu->arch.sysregs.vm.cntv_ctl_el0  = MRS(CNTV_CTL_EL0);
     vcpu->arch.sysregs.vm.cntv_cval_el0 = MRS(CNTV_CVAL_EL0);
     vcpu->arch.sysregs.vm.cntkctl_el1   = MRS(CNTKCTL_EL1);
+    vgic_save_state(vcpu);
 }
 
 void vcpu_restore_state(vcpu_t* vcpu){
@@ -195,4 +196,5 @@ void vcpu_restore_state(vcpu_t* vcpu){
     MSR(CNTV_CTL_EL0, vcpu->arch.sysregs.vm.cntv_ctl_el0);
     MSR(CNTV_CVAL_EL0, vcpu->arch.sysregs.vm.cntv_cval_el0);
     MSR(CNTKCTL_EL1, vcpu->arch.sysregs.vm.cntkctl_el1);
+    vgic_restore_state(vcpu);
 }
