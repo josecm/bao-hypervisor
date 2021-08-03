@@ -207,5 +207,5 @@ void vgic_cpu_init(vcpu_t *vcpu)
         vcpu->arch.vgic_priv.interrupts[i].enabled = true;
     }
 
-    bitmap_set_consecutive(&vcpu->arch.vgic_priv.gich.ELSR, 0, NUM_LRS);
+    bitmap_set_consecutive((bitmap_t) &vcpu->arch.vgic_priv.gich.ELSR, 0, NUM_LRS);
 }
