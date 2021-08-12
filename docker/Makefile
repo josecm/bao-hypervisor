@@ -13,21 +13,12 @@
  #
 ##
 
-MAKEFLAGS += --no-print-directory
+DOCKER?=$(shell which docker)
+docker_repo:=josecm
+docker_image:=bao
+docker_tag:=test
 
-export root_dir:=$(abspath .)
-docker_dir:=$(root_dir)/docker
-
-ifneq ($(BAO_DOCKER_ENABLE),)
-
-all .DEFAULT:
-	@$(MAKE) -C $(docker_dir) $@
-
-else #BAO_DOCKER_ENABLE
-
-all .DEFAULT:
-	@$(MAKE) -f build.mk $@
-
-endif #BAO_DOCKER_ENABLE
-
-.PHONY: all docker
+.DEFAULT: 
+	@echo "Launching docker container..."
+	@$(DOCKER) run --rm -it -u bao -v $(root_dir):$(root_dir) -w $(root_dir) \
+		$(docker_repo)/$(docker_image):$(docker_tag) $(MAKE) $(MAKEFLAGS) $(MAKEOVERRIDES) $(MAKECMDGOALS)
