@@ -24,7 +24,6 @@
 #include <platform.h>
 #include <vmm.h>
 
-This should not be here.
 
 void init(uint64_t cpu_id, uint64_t load_addr, uint64_t config_addr)
 {
@@ -40,6 +39,7 @@ void init(uint64_t cpu_id, uint64_t load_addr, uint64_t config_addr)
     if (cpu.id == CPU_MASTER) {
         console_init();
         printk("Bao Hypervisor\n\r");
+        printk("This should not be here.\n\r");
     }
 
     interrupts_init();
