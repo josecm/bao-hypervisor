@@ -13,12 +13,17 @@
  #
 ##
 
+root_dir?=$(realpath ..)
+
 DOCKER?=$(shell which docker)
 docker_repo:=josecm
 docker_image:=bao
 docker_tag:=test
 
-.DEFAULT: 
+all .DEFAULT:
 	@echo "Launching docker container..."
 	@$(DOCKER) run --rm -it -u bao -v $(root_dir):$(root_dir) -w $(root_dir) \
 		$(docker_repo)/$(docker_image):$(docker_tag) $(MAKE) $(MAKEFLAGS) $(MAKEOVERRIDES) $(MAKECMDGOALS)
+	@echo "Leaving and destroying docker container..."
+
+.PHONY: all
