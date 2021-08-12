@@ -1,0 +1,23 @@
+name: Bao Hypervisor CI
+
+on:
+  push:
+    branches: [ ci ]
+  pull_request:
+    branches: [ ci ]
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: josecm/bao:test
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build Bao for reference aarch64 platform
+        run: make PLATFORM=qemu-aarch64-virt
+
+      - name: Build Bao for reference riscv64 platform
+        run: make PLATFORM=qemu-riscv64-virt
