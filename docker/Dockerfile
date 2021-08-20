@@ -10,7 +10,8 @@ RUN apt update && apt install -y \
     git \
     curl \
     xz-utils \
-    build-essential
+    build-essential \
+    clang-format-12
 
 # install toolchains
 RUN mkdir /opt/aarch64-toolchain && curl $AARCH64_TOOLCHAIN_LINK | tar xJ -C /opt/aarch64-toolchain --strip-components=1 && \
