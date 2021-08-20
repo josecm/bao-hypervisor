@@ -21,3 +21,13 @@ jobs:
 
       - name: Build Bao for reference riscv64 platform
         run: make PLATFORM=qemu-riscv64-virt
+
+  check-style:
+    runs-on: ubuntu-latest
+    container: josecm/bao:test
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Check coding style
+        run: make format-check
