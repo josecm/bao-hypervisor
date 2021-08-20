@@ -26,11 +26,14 @@
 #define PTE_INDEX_SHIFT(LEVEL) ((9 * (3 - LEVEL)) + 12)
 #define PTE_INDEX(LEVEL, ADDR) ((ADDR >> PTE_INDEX_SHIFT(LEVEL)) & (0x1FF))
 
+
+// clang-format off
 .macro PTE_INDEX_ASM	index, addr, level
 	lsr \index, \addr, #PTE_INDEX_SHIFT(\level) 
 	and \index, \index, #0x1ff
 	lsl \index, \index, #3
 .endm
+// clang-format on
 #endif
 
 #define HYP_ROOT_PT_SIZE PAGE_SIZE
