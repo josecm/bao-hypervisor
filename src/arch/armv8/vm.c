@@ -52,6 +52,8 @@ void vcpu_arch_init(vcpu_t* vcpu, vm_t* vm)
     vcpu->arch.sysregs.hyp.vmpidr_el2 = vm_cpuid_to_mpidr(vm, vcpu->id);
     vcpu->arch.sysregs.hyp.cntvoff_el2 = 0;
 
+    vcpu->arch.psci_ctx.state = vcpu->id == 0 ? PSCI_ON : PSCI_OFF;
+
     uint64_t root_pt_pa;
     mem_translate(&cpu.as, vm->as.pt.root, &root_pt_pa);
     vcpu->arch.sysregs.hyp.vttbr_el2 =
