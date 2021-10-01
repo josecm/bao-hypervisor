@@ -122,13 +122,6 @@ void vcpu_writepc(vcpu_t* vcpu, uint64_t pc)
     }
 }
 
-bool vm_readmem(vm_t* vm, void* dest, uintptr_t vmaddr, size_t n)
-{
-    // TODO
-
-    return false;
-}
-
 void vcpu_arch_run(vcpu_t* vcpu)
 {
     // TODO: consider using TPIDR_EL2 to store vcpu pointer

@@ -15,8 +15,6 @@
 
 #include <config.h>
 
-#define adjust_ptr(p, o) ((p) = (p) ? (typeof(p))(  (void*)(p) + (uint64_t)(o)) : (p))
-
 void config_vm_adjust_to_va(vm_config_t *vm_config, struct config *config, uint64_t phys)
 {
     config_arch_vm_adjust_to_va(vm_config, config, phys);
@@ -44,6 +42,8 @@ void config_vm_adjust_to_va(vm_config_t *vm_config, struct config *config, uint6
             config_vm_adjust_to_va(vm_config->children[i], config, phys);
         }
     }
+
+    config_arch_vm_adjust_to_va(vm_config, config, phys);
 }
 
 bool config_is_builtin() {
