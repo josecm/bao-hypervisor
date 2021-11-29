@@ -19,3 +19,4 @@ arch-cppflags = -DGIC_VERSION=$(GIC_VERSION)
 arch-cflags = -march=armv8-a -mcmodel=large -mgeneral-regs-only
 arch-asflags =
 arch-ldflags =
+clang-arch = arm64

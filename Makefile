@@ -35,8 +35,16 @@ format_srcs:=$(shell find $(root_dir)/src -regex ".*\.\(c\|h\)")
 format:
 	@echo "Running $(clang-format)..."
 	@$(clang-format) --style=file -i $(format_srcs)
-
 format-check:
 	@diff <(cat $(format_srcs)) <($(clang-format) --style=file $(format_srcs))
+
+
+ifneq ($(findstring $(MAKECMDGOALS), tidy),)
+include setup.mk
+endif
+tidy_srcs:=$(wildcard $(objs-y:%.o=%.c)) \
+	$(foreach dir, $(inc_dirs), $(wildcard $(dir)/*.h))
+tidy:
+	@clang-tidy $(tidy_srcs) -- --target=$(clang-arch) $(CPPFLAGS)
 
 endif #BAO_DOCKER_ENABLE

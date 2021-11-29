@@ -1,0 +1,4 @@
+Checks:              '-*,bugprone-macro-parentheses,bugprone-multiple-statement-macro, misc-definitions-in-headers,misc-unused-using-decls,readability-non-const-parameter,readability-named-parameter,readability-inconsistent-declaration-parameter-name,misc-no-recursion,bugprone-unused-return-value,misc-unused-parameters,cert-dcl50-cpp,cppcoreguidelines-pro-type-vararg,readability-braces-around-statements,cppcoreguidelines-avoid-goto,hicpp-avoid-goto,readability-magic-numbers,cppcoreguidelines-pro-bounds-pointer-arithmetic,hicpp-signed-bitwise,hicpp-no-assembler,readability-uppercase-literal-suffix,readability-identifier-length,bugprone-reserved-identifier'
+WarningsAsErrors:    ''
+HeaderFilterRegex:   ''
+FormatStyle:         none
