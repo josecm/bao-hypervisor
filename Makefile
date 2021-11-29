@@ -16,12 +16,8 @@
 SHELL:=bash
 MAKEFLAGS+= --no-print-directory
 
-CLANG_FORMAT:=clang-format-12
-
 export root_dir:=$(abspath .)
 docker_dir:=$(root_dir)/docker
-
-c_srcs:=$(shell find $(root_dir)/src -regex ".*\.\(c\|h\)")
 
 ifneq ($(BAO_DOCKER_ENABLE),)
 
@@ -35,11 +31,12 @@ else #BAO_DOCKER_ENABLE
 all .DEFAULT:
 	@$(MAKE) -f build.mk $@
 
+format_srcs:=$(shell find $(root_dir)/src -regex ".*\.\(c\|h\)")
 format:
-	@echo "Running $(CLANG_FORMAT)..."
-	@$(CLANG_FORMAT) --style=file -i $(c_srcs)
+	@echo "Running $(clang-format)..."
+	@$(clang-format) --style=file -i $(format_srcs)
 
 format-check:
-	@diff <(cat $(c_srcs)) <($(CLANG_FORMAT) --style=file $(c_srcs))
+	@diff <(cat $(format_srcs)) <($(clang-format) --style=file $(format_srcs))
 
 endif #BAO_DOCKER_ENABLE
