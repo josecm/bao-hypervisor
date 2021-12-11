@@ -38,13 +38,17 @@ format:
 format-check:
 	@diff <(cat $(format_srcs)) <($(clang-format) --style=file $(format_srcs))
 
-
-ifneq ($(findstring $(MAKECMDGOALS), tidy),)
+ifneq ($(findstring $(MAKECMDGOALS), tidy, cppcheck),)
 include setup.mk
 endif
-tidy_srcs:=$(wildcard $(objs-y:%.o=%.c)) \
-	$(foreach dir, $(inc_dirs), $(wildcard $(dir)/*.h))
+
 tidy:
-	@clang-tidy $(tidy_srcs) -- --target=$(clang-arch) $(CPPFLAGS)
+	@clang-tidy $(c_srcs) $(h_srcs) -- --target=$(clang-arch) $(CPPFLAGS)
+
+cppcheck_flags:= --quiet --enable=all --error-exitcode=1 $(CPPFLAGS)
+std_incs:=$(shell $(CROSS_COMPILE)gcc -E -Wp,-v -xc /dev/null 2>&1 | grep "^ ")
+
+cppcheck:
+	@cppcheck $(cppcheck_flags) $(addprefix -I , $(std_incs)) $(c_srcs)
 
 endif #BAO_DOCKER_ENABLE

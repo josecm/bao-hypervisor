@@ -75,6 +75,9 @@ objs-y+=$(addprefix $(core_dir)/, $(core-objs-y))
 objs-y+=$(addprefix $(platform_dir)/, $(boards-objs-y))
 objs-y+=$(addprefix $(drivers_dir)/, $(drivers-objs-y))
 
+c_srcs:=$(wildcard $(objs-y:%.o=%.c))
+h_srcs:=$(foreach dir, $(inc_dirs), $(wildcard $(dir)/*.h))
+
 # Toolchain flags
 override CPPFLAGS+=$(addprefix -I, $(inc_dirs)) $(arch-cppflags) $(platform-cppflags)
 vpath:.=CPPFLAGS
