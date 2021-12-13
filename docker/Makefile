@@ -16,9 +16,9 @@
 root_dir?=$(realpath ..)
 
 DOCKER?=$(shell which docker)
-docker_repo:=josecm
+docker_repo:=baoproject
 docker_image:=bao
-docker_tag:=test
+docker_tag:=latest
 
 all .DEFAULT:
 	@echo "Launching docker container..."
