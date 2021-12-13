@@ -15,6 +15,9 @@
 
 SHELL:=bash
 MAKEFLAGS+= --no-print-directory
+CLANG_VERSION:=12
+clang-format:=clang-format-$(CLANG_VERSION)
+clang-tidy:=clang-tidy-$(CLANG_VERSION)
 
 export root_dir:=$(abspath .)
 docker_dir:=$(root_dir)/docker
@@ -43,7 +46,7 @@ include setup.mk
 endif
 
 tidy:
-	@clang-tidy $(c_srcs) $(h_srcs) -- --target=$(clang-arch) $(CPPFLAGS)
+	@$(clang-tidy) $(c_srcs) $(h_srcs) -- --target=$(clang-arch) $(CPPFLAGS)
 
 cppcheck_flags:= --quiet --enable=all --error-exitcode=1 $(CPPFLAGS)
 std_incs:=$(shell $(CROSS_COMPILE)gcc -E -Wp,-v -xc /dev/null 2>&1 | grep "^ ")
