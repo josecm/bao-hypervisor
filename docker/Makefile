@@ -20,6 +20,9 @@ docker_repo:=baoproject
 docker_image:=bao
 docker_tag:=latest
 
+#avoid recursive call of this make inside container
+MAKEOVERRIDES:=$(filter-out BAO_DOCKER_ENABLE%, $(MAKEOVERRIDES))
+
 all .DEFAULT:
 	@echo "Launching docker container..."
 	-@$(DOCKER) run --rm -it -u bao -v $(root_dir):$(root_dir) -w $(root_dir) \
