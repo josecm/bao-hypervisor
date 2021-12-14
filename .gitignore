@@ -10,3 +10,5 @@ configs/*
 !configs/linker.ld 
 !configs/example/
 
+misra/rules.txt
+*.dump
