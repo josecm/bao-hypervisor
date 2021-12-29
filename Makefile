@@ -18,6 +18,7 @@ MAKEFLAGS+= --no-print-directory
 CLANG_VERSION:=12
 clang-format:=clang-format-$(CLANG_VERSION)
 clang-tidy:=clang-tidy-$(CLANG_VERSION)
+CPPCHECK:=cppcheck
 
 export root_dir:=$(abspath .)
 docker_dir:=$(root_dir)/docker
@@ -52,6 +53,6 @@ cppcheck_flags:= --quiet --enable=all --error-exitcode=1 $(CPPFLAGS)
 std_incs:=$(shell $(CROSS_COMPILE)gcc -E -Wp,-v -xc /dev/null 2>&1 | grep "^ ")
 
 cppcheck:
-	@cppcheck $(cppcheck_flags) $(addprefix -I , $(std_incs)) $(c_srcs)
+	@$(CPPCHECK) $(cppcheck_flags) $(addprefix -I , $(std_incs)) $(c_srcs)
 
 endif #BAO_DOCKER_ENABLE
