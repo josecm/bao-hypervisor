@@ -1,0 +1,11 @@
+name: Base checks
+
+on:
+  push:
+    branches: [ ci-remote ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  base:
+    uses: josecm/bao-ci/.github/workflows/base.yml@main
