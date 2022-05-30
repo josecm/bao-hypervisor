@@ -14,6 +14,7 @@
  */
 
 #include <bao.h>
+#include <plat/platform.h>
 
 ENTRY(_image_start)
 
@@ -100,7 +101,7 @@ SECTIONS
 
 	. = ALIGN(PAGE_SIZE);
 	_dmem_beg = ABSOLUTE(.);
-	_cpu_if_base = ABSOLUTE(.);
+	_cpu_phys_base = ABSOLUTE(.);
 	
 	/* Global dynamic memory virtual address space here */
 

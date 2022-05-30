@@ -16,6 +16,12 @@
 #ifndef __PLAT_PLATFORM_H__
 #define __PLAT_PLATFORM_H__
 
+#ifndef __ASSEMBLER__
+
 #include <drivers/pl011_uart.h>
+
+#endif /* !__ASSEMBLER__ */
+
+#define BAO_VAS_BASE    (0x00000000)
 
 #endif
