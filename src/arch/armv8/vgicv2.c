@@ -22,6 +22,14 @@
 #include <interrupts.h>
 #include <vm.h>
 
+/**
+ * @brief Check if the interrupt has other targets besides vcpu
+ * 
+ * @param vcpu a pointer to the vcpu part of the vm associated with the vgic
+ * @param interrupt pointer to the interrupt struct
+ * @return true if there are other vcpu configured as targets for the interrupt,
+ * false otherwise
+ */
 bool vgic_int_has_other_target(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
     bool priv = gic_is_priv(interrupt->id);
@@ -29,6 +37,13 @@ bool vgic_int_has_other_target(struct vcpu *vcpu, struct vgic_int *interrupt)
     return !priv && has_other_targets;
 }
 
+/**
+ * @brief Read the physical cpu targets for the interrupt
+ * 
+ * @param vcpu a pointer to the vcpu part of the vm associated with the vgic
+ * @param interrupt pointer to the interrupt struct
+ * @return uint8_t a bitmap containing the physical cpu target for the interrupt
+ */
 uint8_t vgic_int_ptarget_mask(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
     return interrupt->targets;
@@ -46,11 +61,26 @@ bool vgicd_set_trgt(struct vcpu *vcpu, struct vgic_int *interrupt, cpumap_t targ
     return prev_targets != targets;
 }
 
+/**
+ * @brief Commit the interrupt target configuration to the real physical interrupt
+ * 
+ * @param vcpu a pointer to the vcpu part of the vm associated with the vgic
+ * @param interrupt pointer to the interrupt struct
+ */
 void vgicd_set_trgt_hw(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
     gicd_set_trgt(interrupt->id, interrupt->targets);
 }
 
+/**
+ * @brief Get a cpu bitmap of the vcpus which are configured as targets for
+ * the interrupt
+ * 
+ * @param vcpu a pointer to the vcpu part of the vm associated with the vgic
+ * @param interrupt pointer to the interrupt struct
+ * @return cpumap_t a bitmap identifying the vcpus marked as target fot the 
+ * interrupt
+ */
 cpumap_t vgicd_get_trgt(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
     if (gic_is_priv(interrupt->id)) {
@@ -61,6 +91,16 @@ cpumap_t vgicd_get_trgt(struct vcpu *vcpu, struct vgic_int *interrupt)
     }
 }
 
+/**
+ * @brief Emulate access to the GICD SGI registers
+ * 
+ * @param acc pointer to a emulation struct containing information about the
+ * guest access
+ * @param handlers pointer to a vgic register access handling information structure
+ * @param gicr_access boolean indicating if this is an access to a 
+ * redistributor (must be false)
+ * @param vgicr_id the gicr id in case this is a gicr access (ignored)
+ */
 void vgicd_emul_sgiregs_access(struct emul_access *acc,
                                struct vgic_reg_handler_info *handlers,
                                bool gicr_access, vcpuid_t vgicr_id)
@@ -111,6 +151,14 @@ struct vgic_reg_handler_info sgir_info = {
     0b0100,
 };
 
+/**
+ * @brief Inject an sgi in the vgic
+ * 
+ * @param vcpu pointer to the vcpu associated to the vgic where the sgi
+ * is to be injected
+ * @param id a pointer to the interrupt structure
+ * @param source the id of the cpu that triggered the sgi
+ */
 void vgic_inject_sgi(struct vcpu *vcpu, struct vgic_int *interrupt, vcpuid_t source)
 {
     spin_lock(&interrupt->lock);
@@ -136,6 +184,27 @@ void vgic_inject_sgi(struct vcpu *vcpu, struct vgic_int *interrupt, vcpuid_t sou
     spin_unlock(&interrupt->lock);
 }
 
+/**
+ * @brief Initialize the vgic
+ * 
+ * @param vm a pointer to the vm containing the vm
+ * @param gic_dscrp a pointer to the gic descriptor structure in the vm 
+ * configuration
+ * 
+ * @note this functions performs memory allocation:
+ *  - when mapping mmio vgic regions
+ *  - when allocation the vgic interrupt array
+ *  - when adding a new node to the vm emulation region lists
+ * 
+ * @note updates guest page tables, therefore, there might be
+ * dynamic allocation of pages used for the page-tables during the mapping
+ * process.
+ * 
+ * @note allocates memory through mem_alloc_page
+ * 
+ * @note vm_emul_add_mem adds an emulation node to the vm which will result
+ * in the allocation of emul node objects from a slab
+ */
 void vgic_init(struct vm *vm, const struct gic_dscrp *gic_dscrp)
 {
     vm->arch.vgicd.CTLR = 0;
@@ -183,6 +252,11 @@ void vgic_init(struct vm *vm, const struct gic_dscrp *gic_dscrp)
     vm->arch.vgic_spilled_lock = SPINLOCK_INITVAL;
 }
 
+/**
+ * @brief Initialize vgic private interrupts
+ * 
+ * @param vcpu a pointer to the vcpu part of the vm associated with the vgic
+ */
 void vgic_cpu_init(struct vcpu *vcpu)
 {
     for (size_t i = 0; i < GIC_CPU_PRIV; i++) {

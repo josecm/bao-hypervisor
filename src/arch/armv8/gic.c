@@ -32,6 +32,15 @@
 volatile struct gicd_hw gicd __attribute__((section(".devices"), aligned(PAGE_SIZE)));
 spinlock_t gicd_lock;
 
+/**
+ * @brief Initialize the GIC distributor.
+ * 
+ * Its sets up configuration registers with predefined values and brings
+ * interrupt state (pending/active) and configurations (enable/priority/target)
+ * to a quiesced/default value.
+ * 
+ */
+
 void gicd_init()
 {
     size_t int_num = gic_num_irqs();
@@ -80,8 +89,23 @@ void gicd_init()
                        gic_maintenance_handler);
 }
 
+/**
+ * @brief Mapped the needed  GIC MMIO interfaces.
+ * 
+ * @note It depends on the gic version (2 or 3/4) which interfaces are MMIO,
+ * so this function is implemented at the gic version-specific files.
+ * 
+ */
 void gic_map_mmio();
 
+/**
+ * @brief Initialize the GIC.
+ * 
+ * Only the master cpu maps the mmio structures, initializes the gic distributor
+ * and initializes the global NUM_LRS. All other initializes cpu private gic 
+ * structures which mainly consists of the cpu interface.
+ * 
+ */
 void gic_init()
 {
     if (cpu.id == CPU_MASTER) {
@@ -95,6 +119,14 @@ void gic_init()
     gic_cpu_init();
 }
 
+/**
+ * @brief GIC low-level interrupt handler.
+ * 
+ * This function should be called directly from the assembly exception vector.
+ * It is interacts with the GIC to acknowledge and end the interrupt calling
+ * the arch-agnostic interrupt handler.
+ * 
+ */
 void gic_handle()
 {
     uint32_t ack = gicc_iar();
@@ -107,6 +139,12 @@ void gic_handle()
     }
 }
 
+/**
+ * @brief Reads the interrupt priority from the GIC distributor
+ * 
+ * @param int_id the interrupt id
+ * @return uint8_t the interrupt priority
+ */
 uint8_t gicd_get_prio(irqid_t int_id)
 {
     size_t reg_ind = GIC_PRIO_REG(int_id);
@@ -118,6 +156,13 @@ uint8_t gicd_get_prio(irqid_t int_id)
     return prio;
 }
 
+/**
+ * @brief Writes the interrupt level/trigger sensitivity configuration to the
+ * GIC distributor
+ * 
+ * @param int_id the interrupt id
+ * @param cfg the interrupt configuration value (encoded in a 2-bit value)
+ */
 void gicd_set_icfgr(irqid_t int_id, uint8_t cfg)
 {
     size_t reg_ind = (int_id * GIC_CONFIG_BITS) / (sizeof(uint32_t) * 8);
@@ -131,6 +176,12 @@ void gicd_set_icfgr(irqid_t int_id, uint8_t cfg)
     spin_unlock(&gicd_lock);
 }
 
+/**
+ * @brief Sets the interrupt priority in the gic distributor
+ * 
+ * @param int_id the interrupt id
+ * @param prio the interupt priority (8-bit value)
+ */
 void gicd_set_prio(irqid_t int_id, uint8_t prio)
 {
     size_t reg_ind = GIC_PRIO_REG(int_id);
@@ -145,6 +196,12 @@ void gicd_set_prio(irqid_t int_id, uint8_t prio)
     spin_unlock(&gicd_lock);
 }
 
+/**
+ * @brief Set the pending status of an interrupt in the GIC distributor
+ * 
+ * @param int_id the interrupt id
+ * @param pend the intended status (true if pending, false otherwise)
+ */
 void gicd_set_pend(irqid_t int_id, bool pend)
 {
     size_t reg_ind = GIC_INT_REG(int_id);
@@ -155,11 +212,23 @@ void gicd_set_pend(irqid_t int_id, bool pend)
     }
 }
 
+/**
+ * @brief Read the pending status of an interrupt from the GIC distributor
+ * 
+ * @param int_id the interrupt id
+ * @param pend the interrupt status (true if pending, false otherwise)
+ */
 bool gicd_get_pend(irqid_t int_id)
 {
     return (gicd.ISPENDR[GIC_INT_REG(int_id)] & GIC_INT_MASK(int_id)) != 0;
 }
 
+/**
+ * @brief Set the active status of an interrupt in the GIC distributor
+ * 
+ * @param int_id the interrupt id
+ * @param act the intended status (true if active, false otherwise)
+ */
 void gicd_set_act(irqid_t int_id, bool act)
 {
     size_t reg_ind = GIC_INT_REG(int_id);
@@ -171,11 +240,23 @@ void gicd_set_act(irqid_t int_id, bool act)
     }
 }
 
+/**
+ * @brief Read the active status of an interrupt from the GIC distributor
+ * 
+ * @param int_id the interrupt id
+ * @param act the active status (true if active, false otherwise)
+ */
 bool gicd_get_act(irqid_t int_id)
 {
     return (gicd.ISACTIVER[GIC_INT_REG(int_id)] & GIC_INT_MASK(int_id)) != 0;
 }
 
+/**
+ * @brief Enable/Disable an interrupt in the GIC distributor
+ * 
+ * @param int_id the interrupt id
+ * @param en the intended sate (true if enable, false if disabled)
+ */
 void gicd_set_enable(irqid_t int_id, bool en)
 {
     size_t reg_ind = GIC_INT_REG(int_id);

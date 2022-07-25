@@ -110,16 +110,43 @@ static inline vcpuid_t vm_translate_to_vcpuid(struct vm* vm, cpuid_t pcpuid)
     }
 }
 
+/**
+ * @brief Checks if the current vm was assigned a given physical interrupt
+ * 
+ * @param vm a pointer to the vm
+ * @param int_id the interrupt id
+ * @return true if the vm was assigned the interrupt, false otherwise
+ */
 static inline bool vm_has_interrupt(struct vm* vm, irqid_t int_id)
 {
     return !!bitmap_get(vm->interrupt_bitmap, int_id);
 }
 
+/**
+ * @brief Inject a hardware (ie, physical) interrupt in the target vm
+ * 
+ * @param vcpu a pointer to the vcpu, part of the target vm, that is managed
+ * by the calling cpu
+ * @param id the interrupt id
+ * 
+ * @note this function is was to optimized the interrupt injection path when
+ * the virtual interrupt being injected is known to be directly mapped to 
+ * a real physical interrupt
+ */
 static inline void vcpu_inject_hw_irq(struct vcpu *vcpu, irqid_t id)
 {
     vcpu_arch_inject_hw_irq(vcpu, id);
 }
 
+/**
+ * @brief Inject interrupt in the target vm
+ * 
+ * @param vcpu a pointer to the vcpu, part of the target vm, that is managed
+ * by the calling cpu
+ * @param id the interrupt id
+ * 
+ * @note the interrupt might be a purely virtual interrupt or physical interrupt
+ */
 static inline void vcpu_inject_irq(struct vcpu *vcpu, irqid_t id)
 {
     vcpu_arch_inject_irq(vcpu, id);

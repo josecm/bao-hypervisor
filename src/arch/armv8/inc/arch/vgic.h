@@ -103,6 +103,21 @@ enum vgic_reg_handler_info_id {
     VGIC_REG_HANDLER_ID_NUM
 };
 
+/**
+ * @brief This structures holds information about vgic register access emulation. 
+ * @var reg_access the handler to emulate the register access
+ * @var alignment a bitmap indifcating allowed access aligments
+ * @var reggroup_base the base addres of the accessed register group
+ * @var field_width a might register contains multiple fields (each for a different
+ * interrupt). This field indicates indicates the bit-width of that field
+ * 
+ * @var read_field a callback for reading the field being accessed from the
+ * interrupt structure
+ * @var read_field a callback for updating the field being accessed from the
+ * interrupt structure
+ * @var read_field a callback for updating the physical interrupt configuration
+ * in case the interrupt was configured as an hardware interrupt
+ */
 struct vgic_reg_handler_info {
     void (*reg_access)(struct emul_access *, struct vgic_reg_handler_info *,
                        bool gicr_accces, cpuid_t vgicr_id);

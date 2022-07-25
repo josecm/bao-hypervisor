@@ -53,6 +53,17 @@ extern volatile const uint64_t VGIC_IPI_ID;
 void vgic_ipi_handler(uint32_t event, uint64_t data);
 CPU_MSG_HANDLER(vgic_ipi_handler, VGIC_IPI_ID);
 
+/**
+ * @brief Get the interrupt structure from the virtual gic of the vm associated
+ * with the target virtual cpu.
+ * 
+ * @param vcpu a pointer to the vcpu part of the vm associated with the vgic
+ * @param int_id the interrupt id
+ * @param vgicr_id For gicv3/4 the id of the redistributor associated with the
+ * interrupt in case of this being a PPI.
+ * @return a pointer to the interrupt structure if there is a valid int_id
+ * in the vgic, NULL otherwise
+ */
 static inline struct vgic_int *vgic_get_int(struct vcpu *vcpu, irqid_t int_id,
                                        vcpuid_t vgicr_id)
 {
@@ -67,11 +78,28 @@ static inline struct vgic_int *vgic_get_int(struct vcpu *vcpu, irqid_t int_id,
     return NULL;
 }
 
+/**
+ * @brief Checks if the interrupt is tied with the real physical interrupt
+ * 
+ * @param interrupt a pointer to the interrupt structure
+ * @return true if the interrupt is associated with a physical one, false
+ * otherwise
+ * 
+ * @note virtual sgis are never tied to a physical sgi
+ */
 static inline bool vgic_int_is_hw(struct vgic_int *interrupt)
 {
     return !(interrupt->id < GIC_MAX_SGIS) && interrupt->hw;
 }
 
+/**
+ * @brief Check if the interrupt is in a list register, returning the list
+ * register id and its contents if so.
+ * 
+ * @param interrupt pointer to the interrupt structure
+ * @param[out] lr the contents of the list register
+ * @return int64_t the id of the list register, -1 if there was none
+ */
 static inline int64_t gich_get_lr(struct vgic_int *interrupt, unsigned long *lr)
 {
     if (!interrupt->in_lr || interrupt->owner->phys_id != cpu.id) {
@@ -88,6 +116,14 @@ static inline int64_t gich_get_lr(struct vgic_int *interrupt, unsigned long *lr)
     return -1;
 }
 
+/**
+ * @brief Get the interrupt state (state and/or pending)
+ * 
+ * @param interrupt pointer to the interrupt structure
+ * @return uint8_t interrupt state enconding
+ * 
+ * @note if the interrupt is part of the a list register
+ */
 static inline uint8_t vgic_get_state(struct vgic_int *interrupt)
 {
     uint8_t state = 0;
@@ -108,6 +144,13 @@ static inline uint8_t vgic_get_state(struct vgic_int *interrupt)
     return state;
 }
 
+/**
+ * @brief Try to get the ownership of the interrupt for a given vcpu
+ * 
+ * @param vcpu a pointer to the vcpu part of the vm associated with the vgic
+ * @param interrupt pointer to the interrupt structure
+ * @return true if ownership was successfully attained, false otherwise
+ */
 bool vgic_get_ownership(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
     bool ret = false;
@@ -122,11 +165,31 @@ bool vgic_get_ownership(struct vcpu *vcpu, struct vgic_int *interrupt)
     return ret;
 }
 
+/**
+ * @brief Check if a vcpu currently owns a given interrupt
+ * 
+ * @param vcpu a pointer to the vcpu part of the vm associated with the vgic
+ * @param interrupt pointer to the interrupt structure
+ * @return true if vcpu currently owns the interrupt, false otherwise
+ */
 bool vgic_owns(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
     return interrupt->owner == vcpu;
 }
 
+/**
+ * @brief try to yield the ownership of a given interrupt
+ * 
+ * The semantics of this function are just to *try* to yield the ownership of
+ * a given interrupt. If this is not possible it will "fail" silently.
+ * 
+ * @note ownership cannot be yielded for private interrupts in gicv2, as cpus
+ * cant access each others private interrupt state
+ * 
+ * @note if an interrupt is currently in an lr or its state is active, it
+ * cannot be yielded
+ * 
+ */
 void vgic_yield_ownership(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
     if ((GIC_VERSION == GICV2 && gic_is_priv(interrupt->id)) ||
@@ -138,6 +201,16 @@ void vgic_yield_ownership(struct vcpu *vcpu, struct vgic_int *interrupt)
     interrupt->owner = NULL;
 }
 
+/**
+ * @brief Send a message to inject an sgi to other cpus
+ * 
+ * @param vcpu the source vcpu for the sgi
+ * @param pcpu_mask a bitmap of the physical cpus to which to send the sgi
+ * @param int_id the interrupt id of the sgi
+ * 
+ * @note as cpu messages are sent in this function, it implies the
+ * allocation of a message node from a slab down the line.
+ */
 void vgic_send_sgi_msg(struct vcpu *vcpu, cpumap_t pcpu_mask, irqid_t int_id)
 {
     struct cpu_msg msg = {
@@ -151,6 +224,16 @@ void vgic_send_sgi_msg(struct vcpu *vcpu, cpumap_t pcpu_mask, irqid_t int_id)
     }
 }
 
+/**
+ * @brief Route and inject an active and/or pending interrupt to the correct 
+ * vcpu.
+ *
+ * @param vcpu a pointer to the vcpu part of the vm associated with the vgic
+ * @param interrupt pointer to the interrupt structure
+ * 
+ * @note as cpu messages are sent in this function, it implies the
+ * allocation of a message node from a slab down the line.
+ */
 void vgic_route(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
     if ((interrupt->state == INV) || !interrupt->enabled) {
@@ -176,6 +259,17 @@ void vgic_route(struct vcpu *vcpu, struct vgic_int *interrupt)
     }
 }
 
+/**
+ * @brief Write the interrupt to an LR
+ * 
+ * Also the function  if an interrupt previously written to the 
+ * lr is still owned by the current vcpu and, if so, yields its ownership.
+ * 
+ * @param vcpu a pointer to the vcpu part of the vm associated with the vgic
+ * @param interrupt pointer to the interrupt structure
+ * @param lr_ind the index for the lr to be written
+ * 
+ */
 static inline void vgic_write_lr(struct vcpu *vcpu, struct vgic_int *interrupt,
                                  size_t lr_ind)
 {
@@ -253,6 +347,21 @@ static inline void vgic_write_lr(struct vcpu *vcpu, struct vgic_int *interrupt,
     gich_write_lr(lr_ind, lr);
 }
 
+/**
+ * @brief Remove interrupt from LR.
+ * 
+ * Only works when the interrupt is owned by the calling cpu and is, in fact,
+ * in a LR.
+ * 
+ * If the interrupt state is pending, it turns on the "no pending" maintenance
+ * interrupt source so that the hypervisor is notified if no more pending
+ * interrupts are present in the list registers.
+ *
+ * @param vcpu a pointer to the vcpu part of the vm associated with the vgic
+ * @param interrupt pointer to the interrupt
+ * @return true if interrupt was successfuly removed from lr, false otherwise
+ */
+
 bool vgic_remove_lr(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
     bool ret = false;
@@ -292,6 +401,18 @@ bool vgic_remove_lr(struct vcpu *vcpu, struct vgic_int *interrupt)
     return ret;
 }
 
+/**
+ * @brief Add interrupt to the vgic list of spilled interrupts
+ * 
+ * 
+ * @param vcpu a pointer to the vcpu part of the vm associated with the vgic
+ * @param interrupt pointer to the interrupt
+ * 
+ * @note a spilled interrupt is an interrupt that would ideally be placed in
+ * a LR (because is pending and/or active) but cannot be because there are
+ * not enough LRs
+ */
+
 void vgic_add_spilled(struct vcpu *vcpu, struct vgic_int* interrupt) {
     spin_lock(&vcpu->vm->arch.vgic_spilled_lock);
     struct list *spilled_list = NULL;
@@ -304,6 +425,12 @@ void vgic_add_spilled(struct vcpu *vcpu, struct vgic_int* interrupt) {
     spin_unlock(&vcpu->vm->arch.vgic_spilled_lock);
 }
 
+/**
+ * @brief Spill the interrupt present in a LR
+ * 
+ * @param vcpu a pointer to the vcpu part of the vm associated with the vgic
+ * @param lr_ind the index of the LR containing the interrupt to be spilled
+ */
 void vgic_spill_lr(struct vcpu *vcpu, unsigned lr_ind) {
     unsigned long lr = gich_read_lr(lr_ind);
     struct vgic_int *spilled_int = vgic_get_int(vcpu, GICH_LR_VID(lr), vcpu->id);
@@ -317,6 +444,26 @@ void vgic_spill_lr(struct vcpu *vcpu, unsigned lr_ind) {
     }
 }
 
+
+/**
+ * @brief Add an interrupt to an LR, allocating an LR in the process.
+ * 
+ * If there is no available/free LR, the function tries to maintain the following
+ * rules (as suggested by the GIC specification):
+ * 
+ *  - if any vgic interrupt is pending, at least one pending must be present 
+ * in the list registers;
+ *  - maximize the number of active interrupts in the list register;
+ *  - always select the higher priority interrupts available;
+ * 
+ * In case there is not a free LR, one interrupt will be spilled and added to 
+ * a spilled list (depending on wether it is a PPI os SPI).
+ * 
+ * @param vcpu a pointer to the vcpu part of the vm associated with the vgic
+ * @param interrupt pointer to the interrupt struct
+ * @return true if the interrupt was successfully added to an lr, false 
+ * otherwise
+ */
 bool vgic_add_lr(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
     bool ret = false;
@@ -392,6 +539,13 @@ bool vgic_add_lr(struct vcpu *vcpu, struct vgic_int *interrupt)
 #define VGIC_ENABLE_MASK \
     ((GIC_VERSION == GICV2) ? GICD_CTLR_EN_BIT : GICD_CTLR_ENA_BIT)
 
+/**
+ * @brief Update the enable stat of the virtual gic.
+ * 
+ * This is done by enabling the virtual cpu interface.
+ * 
+ * @param vcpu a pointer to the vcpu part of the vm associated with the vgic
+ */
 static inline void vgic_update_enable(struct vcpu *vcpu)
 {
     if (cpu.vcpu->vm->arch.vgicd.CTLR & VGIC_ENABLE_MASK) {
@@ -401,6 +555,17 @@ static inline void vgic_update_enable(struct vcpu *vcpu)
     }
 }
 
+/**
+ * @brief Emulation handler for a number of misc functionality virtual gic 
+ * distributor registers: GICD.CTLR, GICD.TYPER, GICD.IIDR.
+ * 
+ * @param acc pointer to a emulation struct containing information about the
+ * guest access
+ * @param handlers pointer to a vgic register access handling information structure
+ * @param gicr_access boolean indicating if this is an access to a 
+ * redistributor (must be false)
+ * @param vgicr_id the gicr id in case this is a gicr access (ignored)
+ */
 void vgicd_emul_misc_access(struct emul_access *acc,
                             struct vgic_reg_handler_info *handlers,
                             bool gicr_access, cpuid_t vgicr_id)
@@ -439,6 +604,16 @@ void vgicd_emul_misc_access(struct emul_access *acc,
     }
 }
 
+/**
+ * @brief Emulation handler for the GICD.PIDR register access in the virtual gic.
+ * 
+ * @param acc pointer to a emulation struct containing information about the
+ * guest access
+ * @param handlers pointer to a vgic register access handling information structure
+ * @param gicr_access boolean indicating if this is an access to a 
+ * redistributor (must be false)
+ * @param vgicr_id the gicr id in case this is a gicr access (ignored)
+ */
 void vgicd_emul_pidr_access(struct emul_access *acc,
                             struct vgic_reg_handler_info *handlers,
                             bool gicr_access, cpuid_t vgicr_id)
@@ -449,6 +624,14 @@ void vgicd_emul_pidr_access(struct emul_access *acc,
     }
 }
 
+/**
+ * @brief Update the enable state of a given vgic interrupt
+ * 
+ * @param vcpu a pointer to the vcpu part of the vm associated with the vgic
+ * @param interrupt pointer to the interrupt struct
+ * @param enable new enable state
+ * @return true if the update modified the interrupt state, false otherwise
+ */
 bool vgic_int_update_enable(struct vcpu *vcpu, struct vgic_int *interrupt, bool enable)
 {
     if (GIC_VERSION == GICV2 && gic_is_sgi(interrupt->id)) {
@@ -463,6 +646,12 @@ bool vgic_int_update_enable(struct vcpu *vcpu, struct vgic_int *interrupt, bool 
     }
 }
 
+/**
+ * @brief Commit the interrupt enable state to the real physical interrupt
+ * 
+ * @param vcpu a pointer to the vcpu part of the vm associated with the vgic
+ * @param interrupt pointer to the interrupt struct
+ */
 void vgic_int_enable_hw(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
 #if (GIC_VERSION != GICV2)
@@ -477,6 +666,15 @@ void vgic_int_enable_hw(struct vcpu *vcpu, struct vgic_int *interrupt)
 #endif
 }
 
+/**
+ * @brief Clear the enable state of the interrupt
+ * 
+ * @param vcpu a pointer to the vcpu part of the vm associated with the vgic
+ * @param interrupt pointer to the interrupt struct
+ * @param data interpreted as a boolean indicating to clear the enable state or
+ * not
+ * @return true if the state was updated, false otherwise
+ */
 bool vgic_int_clear_enable(struct vcpu *vcpu, struct vgic_int *interrupt, uint64_t data)
 {
     if (!data)
@@ -485,6 +683,15 @@ bool vgic_int_clear_enable(struct vcpu *vcpu, struct vgic_int *interrupt, uint64
         return vgic_int_update_enable(vcpu, interrupt, false);
 }
 
+/**
+ * @brief Set the enable state of the interrupt
+ * 
+ * @param vcpu a pointer to the vcpu part of the vm associated with the vgic
+ * @param interrupt pointer to the interrupt struct
+ * @param data interpreted as a boolean indicating to set the enable state or
+ * not
+ * @return true if the enable state was updated, false otherwise
+ */
 bool vgic_int_set_enable(struct vcpu *vcpu, struct vgic_int *interrupt, uint64_t data)
 {
     if (!data)
@@ -493,11 +700,26 @@ bool vgic_int_set_enable(struct vcpu *vcpu, struct vgic_int *interrupt, uint64_t
         return vgic_int_update_enable(vcpu, interrupt, true);
 }
 
+/**
+ * @brief Read the enable state of the interrupt
+ * 
+ * @param vcpu a pointer to the vcpu part of the vm associated with the vgic
+ * @param interrupt pointer to the interrupt struct
+ * @return uint64_t casted from bool: 1 if the interrupt is enabled, 0 if not
+ */
 uint64_t vgic_int_get_enable(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
     return (uint64_t)interrupt->enabled;
 }
 
+/**
+ * @brief Update the pending state of the interrupt.
+ * 
+ * @param vcpu a pointer to the vcpu part of the vm associated with the vgic
+ * @param interrupt pointer to the interrupt struct
+ * @param pend indicates the pretended state for the interrupt pending
+ * @return true if the pending state was updated, false otherwise 
+ */
 bool vgic_int_update_pend(struct vcpu *vcpu, struct vgic_int *interrupt, bool pend)
 {
     if (GIC_VERSION == GICV2 && gic_is_sgi(interrupt->id)) {
@@ -515,6 +737,12 @@ bool vgic_int_update_pend(struct vcpu *vcpu, struct vgic_int *interrupt, bool pe
     }
 }
 
+/**
+ * @brief Commit the interrupt active/pending state to the real physical interrupt
+ * 
+ * @param vcpu a pointer to the vcpu part of the vm associated with the vgic
+ * @param interrupt pointer to the interrupt struct
+ */
 void vgic_int_state_hw(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
     uint8_t state = interrupt->state == PEND ? ACT : interrupt->state;
@@ -534,6 +762,15 @@ void vgic_int_state_hw(struct vcpu *vcpu, struct vgic_int *interrupt)
 #endif
 }
 
+/**
+ * @brief Clear the pending state of the interrupt
+ * 
+ * @param vcpu a pointer to the vcpu part of the vm associated with the vgic
+ * @param interrupt pointer to the interrupt struct
+ * @param data interpreted as a boolean indicating to clear the pending state or
+ * not
+ * @return true if the state was updated, false otherwise
+ */
 bool vgic_int_clear_pend(struct vcpu *vcpu, struct vgic_int *interrupt, uint64_t data)
 {
     if (!data)
@@ -542,6 +779,15 @@ bool vgic_int_clear_pend(struct vcpu *vcpu, struct vgic_int *interrupt, uint64_t
         return vgic_int_update_pend(vcpu, interrupt, false);
 }
 
+/**
+ * @brief Set the pending state of the interrupt
+ * 
+ * @param vcpu a pointer to the vcpu part of the vm associated with the vgic
+ * @param interrupt pointer to the interrupt struct
+ * @param data interpreted as a boolean indicating to set the pending state or
+ * not
+ * @return true if the enable state was updated, false otherwise
+ */
 bool vgic_int_set_pend(struct vcpu *vcpu, struct vgic_int *interrupt, uint64_t data)
 {
     if (!data)
@@ -550,11 +796,26 @@ bool vgic_int_set_pend(struct vcpu *vcpu, struct vgic_int *interrupt, uint64_t d
         return vgic_int_update_pend(vcpu, interrupt, true);
 }
 
+/**
+ * @brief Read the pending state of the interrupt
+ * 
+ * @param vcpu a pointer to the vcpu part of the vm associated with the vgic
+ * @param interrupt pointer to the interrupt struct
+ * @return uint64_t 1 if the interrupt is pending, 0 otherwise
+ */
 uint64_t vgic_int_get_pend(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
     return (interrupt->state & PEND) ? 1 : 0;
 }
 
+/**
+ * @brief Update the active state of a given vgic interrupt
+ * 
+ * @param vcpu a pointer to the vcpu part of the vm associated with the vgic
+ * @param interrupt pointer to the interrupt struct
+ * @param act new act state
+ * @return true if the update modified the interrupt state, false otherwise
+ */
 bool vgic_int_update_act(struct vcpu *vcpu, struct vgic_int *interrupt, bool act)
 {
     if (act ^ !!(interrupt->state & ACT)) {
@@ -568,6 +829,15 @@ bool vgic_int_update_act(struct vcpu *vcpu, struct vgic_int *interrupt, bool act
     }
 }
 
+/**
+ * @brief Clear the active state of the vgic interrupt
+ * 
+ * @param vcpu a pointer to the vcpu part of the vm associated with the vgic
+ * @param interrupt pointer to the interrupt struct
+ * @param data interpreted as a boolean indicating to clear the active state or
+ * not
+ * @return true if the state was updated, false otherwise
+ */
 bool vgic_int_clear_act(struct vcpu *vcpu, struct vgic_int *interrupt, uint64_t data)
 {
     if (!data)
@@ -576,6 +846,15 @@ bool vgic_int_clear_act(struct vcpu *vcpu, struct vgic_int *interrupt, uint64_t 
         return vgic_int_update_act(vcpu, interrupt, false);
 }
 
+/**
+ * @brief Set the active state of the vgic interrupt
+ * 
+ * @param vcpu a pointer to the vcpu part of the vm associated with the vgic
+ * @param interrupt pointer to the interrupt struct
+ * @param data interpreted as a boolean indicating to set the active state or
+ * not
+ * @return true if the enable state was updated, false otherwise
+ */
 bool vgic_int_set_act(struct vcpu *vcpu, struct vgic_int *interrupt, uint64_t data)
 {
     if (!data)
@@ -584,11 +863,26 @@ bool vgic_int_set_act(struct vcpu *vcpu, struct vgic_int *interrupt, uint64_t da
         return vgic_int_update_act(vcpu, interrupt, true);
 }
 
+/**
+ * @brief Read the active state of the vgic interrupt
+ * 
+ * @param vcpu a pointer to the vcpu part of the vm associated with the vgic
+ * @param interrupt pointer to the interrupt struct
+ * @return uint64_t 1 if the interrupt is active, 0 otherwise 
+ */
 uint64_t vgic_int_get_act(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
     return (interrupt->state & ACT) ? 1 : 0;
 }
 
+/**
+ * @brief Set the cfg (level/edge sensitivity) for the vgic interrupt
+ * 
+ * @param vcpu a pointer to the vcpu part of the vm associated with the vgic
+ * @param interrupt pointer to the interrupt struct
+ * @param cfg cfg value
+ * @return true if the update modified the interrupt state, false otherwise
+ */
 bool vgic_int_set_cfg(struct vcpu *vcpu, struct vgic_int *interrupt, uint64_t cfg)
 {
     uint8_t prev_cfg = interrupt->cfg;
@@ -596,11 +890,24 @@ bool vgic_int_set_cfg(struct vcpu *vcpu, struct vgic_int *interrupt, uint64_t cf
     return prev_cfg != cfg;
 }
 
+/**
+ * @brief Read the cfg of a given vgic interrupt
+ * 
+ * @param vcpu a pointer to the vcpu part of the vm associated with the vgic
+ * @param interrupt pointer to the interrupt struct
+ * @return uint64_t the cfg value for the interrupt
+ */
 uint64_t vgic_int_get_cfg(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
     return (uint64_t)interrupt->cfg;
 }
 
+/**
+ * @brief Commit the interrupt cfg to the real physical interrupt
+ * 
+ * @param vcpu a pointer to the vcpu part of the vm associated with the vgic
+ * @param interrupt pointer to the interrupt struct
+ */
 void vgic_int_set_cfg_hw(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
 #if (GIC_VERSION != GICV2)
@@ -614,6 +921,14 @@ void vgic_int_set_cfg_hw(struct vcpu *vcpu, struct vgic_int *interrupt)
 #endif
 }
 
+/**
+ * @brief Set the priority of a given vgic interrupt
+ * 
+ * @param vcpu a pointer to the vcpu part of the vm associated with the vgic
+ * @param interrupt pointer to the interrupt struct
+ * @param prio the target priority value
+ * @return true if the priority was updated, false otherwise
+ */
 bool vgic_int_set_prio(struct vcpu *vcpu, struct vgic_int *interrupt, uint64_t prio)
 {
     uint8_t prev_prio = interrupt->prio;
@@ -622,11 +937,25 @@ bool vgic_int_set_prio(struct vcpu *vcpu, struct vgic_int *interrupt, uint64_t p
     return prev_prio != prio;
 }
 
+/**
+ * @brief Read the priority of a given vgic interrupt
+ * 
+ * @param vcpu a pointer to the vcpu part of the vm associated with the vgic
+ * @param interrupt pointer to the interrupt struct
+ * @return uint64_t the priority value
+ */
 uint64_t vgic_int_get_prio(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
     return (uint64_t)interrupt->prio;
 }
 
+
+/**
+ * @brief Commit the interrupt priority to the real physical interrupt
+ * 
+ * @param vcpu a pointer to the vcpu part of the vm associated with the vgic
+ * @param interrupt pointer to the interrupt struct
+ */
 void vgic_int_set_prio_hw(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
 #if (GIC_VERSION != GICV2)
@@ -640,12 +969,36 @@ void vgic_int_set_prio_hw(struct vcpu *vcpu, struct vgic_int *interrupt)
 #endif
 }
 
+/**
+ * @brief Emulates the access to a gic raz/wi (read-as-zero/write ignore) 
+ * register.
+ * 
+ * @param acc pointer to a emulation struct containing information about the
+ * guest access
+ * @param handlers pointer to a vgic register access handling information structure
+ * @param gicr_access boolean indicating if this is an access to a 
+ * redistributor (must be false)
+ * @param vgicr_id the gicr id in case this is a gicr access (ignored)
+ */
 void vgic_emul_razwi(struct emul_access *acc, struct vgic_reg_handler_info *handlers,
                      bool gicr_access, cpuid_t vgicr_id)
 {
     if (!acc->write) vcpu_writereg(cpu.vcpu, acc->reg, 0);
 }
 
+/**
+ * @brief Set a generic field of a GIC configuration using specific callbacks
+ * defined in the handlers structure
+ * 
+ * @param handlers pointer to a vgic register access handling information structure
+ * @param vcpu a pointer to the vcpu part of the vm associated with the vgic
+ * @param interrupt pointer to the interrupt struct
+ * @param data generic data to be interpreted only by the invoked field-specific
+ * handlers
+ * 
+ * @note as cpu messages are sent in this function, it implies the
+ * allocation of a message node from a slab down the line.
+ */
 void vgic_int_set_field(struct vgic_reg_handler_info *handlers, struct vcpu *vcpu,
                         struct vgic_int *interrupt, uint64_t data)
 {
@@ -667,6 +1020,17 @@ void vgic_int_set_field(struct vgic_reg_handler_info *handlers, struct vcpu *vcp
     spin_unlock(&interrupt->lock);
 }
 
+/**
+ * @brief Generic emulation handler for accessing vgic configuration registers 
+ * with multiple interrupts per register.
+ * 
+ * @param acc pointer to a emulation struct containing information about the
+ * guest access
+ * @param handlers pointer to a vgic register access handling information structure
+ * @param gicr_access boolean indiciating if this was a vgicr access
+ * @param vgicr_id in case gicr is true, contains the vgicr id, otherwise, 
+ * it is ignored
+ */
 void vgic_emul_generic_access(struct emul_access *acc,
                               struct vgic_reg_handler_info *handlers,
                               bool gicr_access, cpuid_t vgicr_id)
@@ -839,6 +1203,15 @@ struct vgic_reg_handler_info
     }
 }
 
+/**
+ * @brief Check if the agligment of the access to a given vgic register is
+ * valid.
+ * 
+ * @param acc pointer to a emulation struct containing information about the
+ * guest access
+ * @param handlers pointer to a vgic register access handling information structure
+ * @return true if the access alignment is legal, false otherwise
+ */
 bool vgic_check_reg_alignment(struct emul_access *acc,
                               struct vgic_reg_handler_info *handlers)
 {
@@ -850,6 +1223,16 @@ bool vgic_check_reg_alignment(struct emul_access *acc,
     }
 }
 
+/**
+ * @brief First level emulation handler for the virtual gic distributor. 
+ * 
+ * Detects which register is being accessed retrieving the specific handling
+ * information. If the access aligment is valid, it calls the specific 
+ * register emulation handler
+ * 
+ * @param acc pointer to a emulation struct containing information about the
+ * guest access
+ */
 bool vgicd_emul_handler(struct emul_access *acc)
 {
     struct vgic_reg_handler_info *handler_info = NULL;
@@ -907,6 +1290,17 @@ bool vgicd_emul_handler(struct emul_access *acc)
     }
 }
 
+/**
+ * @brief Inject an interrupt tied to a physical interrupt in vgic associated
+ * with the vcpu
+ * 
+ * @param vcpu pointer to the vcpu associated to the vgic where the interrupt
+ * is to be injected
+ * @param id the id of the interrupt
+ * 
+ * @note this function is a fast path for injecting virtual interrupts tied 
+ * to real physical interrupts
+ */
 void vgic_inject_hw(struct vcpu* vcpu, irqid_t id) {
     struct vgic_int *interrupt = vgic_get_int(vcpu, id, vcpu->id);
     spin_lock(&interrupt->lock);
@@ -917,6 +1311,14 @@ void vgic_inject_hw(struct vcpu* vcpu, irqid_t id) {
     spin_unlock(&interrupt->lock);
 }
 
+/**
+ * @brief Inject an interrupt in the vgic associated with the vcpu
+ * 
+ * @param vcpu pointer to the vcpu associated to the vgic where the interrupt
+ * is to be injected
+ * @param id the id of the interrupt
+ * @param source the source vcpu in case this is a gicv2 sgi
+ */
 void vgic_inject(struct vcpu* vcpu, irqid_t id, vcpuid_t source)
 {
     struct vgic_int *interrupt = vgic_get_int(vcpu, id, vcpu->id);
@@ -931,6 +1333,37 @@ void vgic_inject(struct vcpu* vcpu, irqid_t id, vcpuid_t source)
     }
 }
 
+void vgic_local_route(struct vcpu *vcpu, irqid_t int_id) {
+    struct vgic_int *interrupt =
+        vgic_get_int(vcpu, int_id, vcpu->id);
+    if (interrupt != NULL) {
+        spin_lock(&interrupt->lock);
+        if (vgic_get_ownership(vcpu, interrupt)) {
+            if (vgic_int_vcpu_is_target(vcpu, interrupt)) {
+                vgic_add_lr(vcpu, interrupt);
+            }
+            vgic_yield_ownership(vcpu, interrupt);
+        }
+        spin_unlock(&interrupt->lock);
+    }
+}
+
+void vgic_set_reg(struct vcpu *vcpu, size_t vgicr_id, irqid_t int_id, size_t reg_id, uint64_t val) {
+    struct vgic_reg_handler_info *handlers =
+        vgic_get_reg_handler_info(reg_id);
+    struct vgic_int *interrupt = vgic_get_int(vcpu, int_id, vgicr_id);
+    if (handlers != NULL && interrupt != NULL) {
+        vgic_int_set_field(handlers, vcpu, interrupt, val);
+    }
+}
+
+/**
+ * @brief Handle IPIs related to vgic events.
+ * 
+ * @param event the id of the event that
+ * @param data data containing information about the vm, vgic, interrupt
+ * with additional event-specific data
+ */
 void vgic_ipi_handler(uint32_t event, uint64_t data)
 {
     uint16_t vm_id = VGIC_MSG_VM(data);
@@ -950,18 +1383,7 @@ void vgic_ipi_handler(uint32_t event, uint64_t data)
         } break;
 
         case VGIC_ROUTE: {
-            struct vgic_int *interrupt =
-                vgic_get_int(cpu.vcpu, int_id, cpu.vcpu->id);
-            if (interrupt != NULL) {
-                spin_lock(&interrupt->lock);
-                if (vgic_get_ownership(cpu.vcpu, interrupt)) {
-                    if (vgic_int_vcpu_is_target(cpu.vcpu, interrupt)) {
-                        vgic_add_lr(cpu.vcpu, interrupt);
-                    }
-                    vgic_yield_ownership(cpu.vcpu, interrupt);
-                }
-                spin_unlock(&interrupt->lock);
-            }
+            vgic_local_route(cpu.vcpu, int_id);
         } break;
 
         case VGIC_INJECT: {
@@ -969,19 +1391,27 @@ void vgic_ipi_handler(uint32_t event, uint64_t data)
         } break;
 
         case VGIC_SET_REG: {
-            uint64_t reg_id = VGIC_MSG_REG(data);
-            struct vgic_reg_handler_info *handlers =
-                vgic_get_reg_handler_info(reg_id);
-            struct vgic_int *interrupt = vgic_get_int(cpu.vcpu, int_id, vgicr_id);
-            if (handlers != NULL && interrupt != NULL) {
-                vgic_int_set_field(handlers, cpu.vcpu, interrupt, val);
-            }
+            vgic_set_reg(cpu.vcpu, vgicr_id, int_id, VGIC_MSG_REG(data), val);
         } break;
     }
 }
 
 /**
  * Must be called holding the vgic_spilled_lock
+ */
+
+/**
+ * @brief Find the highest priority spilled interrupt that can be injected
+ * in the vcpu's vgic
+ * 
+ * @param vcpu the vcpu associated with the vgic
+ * @param flags contain the desired state (active and/or pending of the 
+ * interrupt) of the wanted interrupt
+ * @param[out] outlist the spilled list from where the interrupt is saved (
+ * can be vcpu private or global to the vm)
+ * @return struct vgic_int* a pointer to the found interrupt, NULL if no
+ * interrupt was found
+ *
  */
 static inline 
 struct vgic_int* vgic_highest_prio_spilled(struct vcpu *vcpu, 
@@ -1012,6 +1442,13 @@ struct vgic_int* vgic_highest_prio_spilled(struct vcpu *vcpu,
     return irq;
 }
 
+/**
+ * @brief Fill all free list registers with spilled interrupts.
+ * 
+ * @param vcpu 
+ * @param npie true if this function was called due to an NPIE maintenance 
+ * interrupt
+ */
 static void vgic_refill_lrs(struct vcpu *vcpu, bool npie) {
     uint64_t elrsr = gich_get_elrsr();
     ssize_t  lr_ind = bitmap_find_nth((bitmap_t*)&elrsr, NUM_LRS, 1, 0, true);
@@ -1041,7 +1478,15 @@ static void vgic_refill_lrs(struct vcpu *vcpu, bool npie) {
     spin_unlock(&vcpu->vm->arch.vgic_spilled_lock);
 }
 
-
+/**
+ * @brief Emulate GICC.EOIR access (clearing the active state) 
+ * for the highest priority spilled interrupt.
+ * 
+ * This function is called due to an LRENP maintanence interrupt that arises 
+ * due to the VM accessing EOIR for an interrupt that spilled.
+ * 
+ * @param vcpu pointer to the vcpu that performed the EOIR access
+ */
 static void vgic_eoir_highest_spilled_active(struct vcpu *vcpu)
 {   
     struct list* list = NULL;
@@ -1064,6 +1509,14 @@ static void vgic_eoir_highest_spilled_active(struct vcpu *vcpu)
     }
 }
 
+/**
+ * @brief Emulate GICC.EOIR access (clearing the active state) 
+ * for an interrupt in a list register.
+ *
+ * This function is called due to an EOIR maintenance interrupt.
+ * 
+ * @param vcpu pointer to the vcpu that performed the EOIR access
+ */
 void vgic_handle_trapped_eoir(struct vcpu *vcpu)
 {
     uint64_t eisr = gich_get_eisr();
@@ -1089,6 +1542,15 @@ void vgic_handle_trapped_eoir(struct vcpu *vcpu)
     }
 }
 
+/**
+ * @brief The high level GIC maintence interrupt handler.
+ * 
+ * It checks which maintenance interrupt sources are asserted and calls
+ * the corresponding handlers.
+ * 
+ * @param irq_id the ID of the interrupt that trigered the handler. It must
+ * be the maintenance interrupt id, therefore it is ignored.
+ */
 void gic_maintenance_handler(irqid_t irq_id)
 {
     uint32_t misr = gich_get_misr();
@@ -1112,6 +1574,13 @@ void gic_maintenance_handler(irqid_t irq_id)
     }
 }
 
+/**
+ * @brief Get number of interrupts in the vgic according to the vm configuration
+ * 
+ * @param gic_dscrp a pointer to the gic descriptor structure in the vm 
+ * configuration
+ * @return size_t the number of interrupts in the vgic
+ */
 size_t vgic_get_itln(const struct gic_dscrp *gic_dscrp) {
 
     /**
@@ -1132,6 +1601,13 @@ size_t vgic_get_itln(const struct gic_dscrp *gic_dscrp) {
     return vtyper_itln;
 }
 
+/**
+ * @brief Mark a given interrupt as an hardware interrupt in for the vgic
+ * associated with the vm
+ * 
+ * @param vm a pointer to the target vm structure
+ * @param id the interrupt id
+ */
 void vgic_set_hw(struct vm *vm, irqid_t id)
 {
     if (id < GIC_MAX_SGIS) return;

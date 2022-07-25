@@ -451,6 +451,11 @@ extern volatile struct gicr_hw *gicr;
 
 size_t gich_num_lrs();
 
+/**
+ * @brief Discover the number of interrupts implemented in the current GIC
+ * 
+ * @return size_t the number of available interrupts
+ */
 static inline size_t gic_num_irqs()
 {
     size_t itlinenumber =
@@ -458,11 +463,23 @@ static inline size_t gic_num_irqs()
     return 32 * itlinenumber + 1;
 }
 
+/**
+ * @brief Check if an interrupt is an SGI
+ * 
+ * @param int_id interrupt id
+ * @return true if interrupt is sgi, false otherwise
+ */
 static inline bool gic_is_sgi(irqid_t int_id)
 {
     return int_id < GIC_MAX_SGIS;
 }
 
+/**
+ * @brief Check if an interrupt is an PPI
+ * 
+ * @param int_id interrupt id
+ * @return true if interrupt is PPI, false otherwise
+ */
 static inline bool gic_is_priv(irqid_t int_id)
 {
     return int_id < GIC_CPU_PRIV;

@@ -18,6 +18,17 @@
 
 #include <bao.h>
 
+/**
+ * @brief A structure containing information about a trapped guest MMIO access
+ * 
+ * @var addr the address being accessed
+ * @var write true if the access was a write/store, false for read/load
+ * @var sign_ext true if the value being read/written needs to be sign extended
+ * @var width the width of the access (1, 2, 4 or 8 bytes)
+ * @var reg the gpr being used as source/destination for the access
+ * @var reg_width the width of the register being used (architectures may 
+ * have aliased views of the same register with different widths)
+ */
 struct emul_access {
     vaddr_t addr;
     bool write;
