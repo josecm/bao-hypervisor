@@ -59,7 +59,8 @@ struct vm {
     struct cpu_synctoken sync;
     cpuid_t master;
 
-    struct list vcpu_list;
+    struct list vcpu_list;  // Erase after removing all of its uses
+    size_t vcpu_array[PLAT_CPU_NUM];
     size_t cpu_num;
     cpumap_t cpus;
 

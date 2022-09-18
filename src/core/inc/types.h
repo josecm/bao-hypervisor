@@ -22,6 +22,8 @@ typedef uintptr_t vaddr_t;
 #define NULL_VA ((vaddr_t)NULL)
 #define MAX_VA  ((vaddr_t)-1)
 
+typedef ssize_t mpid_t;
+
 typedef unsigned long colormap_t;
 
 typedef unsigned long cpuid_t;

@@ -19,7 +19,6 @@ enum AS_SEC {
     /*--- VM AS SECTIONS -----*/
     SEC_HYP_GLOBAL = 0,
     SEC_HYP_IMAGE,
-    SEC_HYP_DEVICE,
     SEC_HYP_PRIVATE,
     SEC_HYP_VM,
     SEC_HYP_ANY, /* must be last */

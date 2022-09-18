@@ -6,6 +6,7 @@
 #include <vm.h>
 #include <string.h>
 #include <mem.h>
+#include <mem_prot/mem.h>
 #include <cache.h>
 #include <config.h>
 
@@ -30,10 +31,19 @@ void vm_cpu_init(struct vm* vm)
 
 void vm_vcpu_init(struct vm* vm, const struct vm_config* config)
 {
-    size_t n = NUM_PAGES(sizeof(struct vcpu));
-    struct vcpu* vcpu = (struct vcpu*)mem_alloc_page(n, SEC_HYP_VM, false);
-    if(vcpu == NULL){ ERROR("failed to allocate vcpu"); }
-    memset(vcpu, 0, n * PAGE_SIZE);
+    size_t cpu_map_pos = cpu()->id;
+    size_t cpu_mem_pos = 0;
+    size_t vcpu_pos = 0;
+    /*    Calculate vcpu offset from VM struct    */
+    while (cpu_mem_pos < cpu_map_pos)
+    {
+        if((vm->cpus >> cpu_mem_pos) & 0x1) vcpu_pos++;
+        cpu_mem_pos++;
+    }
+
+    struct vcpu* vcpu = 
+        (struct vcpu*) ((vaddr_t)vm + sizeof(struct vm) + vcpu_pos*sizeof(struct vcpu));
+    memset(vcpu, 0, sizeof(struct vcpu));
 
     cpu()->vcpu = vcpu;
     vcpu->phys_id = cpu()->id;
@@ -57,14 +67,22 @@ void vm_vcpu_init(struct vm* vm, const struct vm_config* config)
     list_push(&vm->vcpu_list, &vcpu->node);
 }
 
+static void vm_update_as(struct vm* vm)
+{
+    vm->as.cpus = vm->cpus;
+}
+
 static void vm_copy_img_to_rgn(struct vm* vm, const struct vm_config* config,
                                struct vm_mem_region* reg)
 {
     /* map original img address */
     size_t n_img = NUM_PAGES(config->image.size);
     struct ppages src_pa_img = mem_ppages_get(config->image.load_addr, n_img);
-    vaddr_t src_va = mem_alloc_map(&cpu()->as, SEC_HYP_GLOBAL, &src_pa_img,
+    vaddr_t src_va = src_pa_img.base;
+    if(!vm_mem_region_is_phys(reg->place_phys)){
+        src_va = mem_alloc_map(&cpu()->as, SEC_HYP_PRIVATE, &src_pa_img,
                                      NULL_VA, n_img, PTE_HYP_FLAGS);
+    }
     if (src_va == NULL_VA) {
         ERROR("mem_alloc_map failed %s", __func__);
     }
@@ -73,7 +91,7 @@ static void vm_copy_img_to_rgn(struct vm* vm, const struct vm_config* config,
     size_t offset = config->image.base_addr - reg->base;
     size_t dst_phys = reg->phys + offset;
     struct ppages dst_pp = mem_ppages_get(dst_phys, n_img);
-    vaddr_t dst_va = mem_alloc_map(&cpu()->as, SEC_HYP_GLOBAL, &dst_pp,
+    vaddr_t dst_va = mem_alloc_map(&cpu()->as, SEC_HYP_PRIVATE, &dst_pp,
                                      NULL_VA, n_img, PTE_HYP_FLAGS);
     if (dst_va == NULL_VA) {
         ERROR("mem_alloc_map failed %s", __func__);
@@ -82,16 +100,17 @@ static void vm_copy_img_to_rgn(struct vm* vm, const struct vm_config* config,
     memcpy((void*)dst_va, (void*)src_va, n_img * PAGE_SIZE);
     cache_flush_range((vaddr_t)dst_va, n_img * PAGE_SIZE);
     /*TODO: unmap */
+    mem_unmap(&cpu()->as, dst_va, dst_pp.size, 1);
 }
 
 void vm_map_mem_region(struct vm* vm, struct vm_mem_region* reg)
 {
     size_t n = NUM_PAGES(reg->size);
 
-    if (reg->place_phys) {
+    if (vm_mem_region_is_phys(reg->place_phys)) {
         struct ppages pa_reg = mem_ppages_get(reg->phys, n);        
         vaddr_t va = mem_alloc_map(&vm->as, SEC_VM_ANY, &pa_reg,
-                    (vaddr_t)reg->base, n, PTE_VM_FLAGS);
+                    (vaddr_t)reg->base, n, PTE_VM_IMG_FLAGS);
         
         if (va != (vaddr_t)reg->base) {
             ERROR("failed to allocate vm's dev address");
@@ -156,7 +175,7 @@ static void vm_install_image(struct vm* vm) {
 static void vm_map_img_rgn(struct vm* vm, const struct vm_config* config,
                            struct vm_mem_region* reg)
 {
-    if (reg->place_phys) {
+    if (vm_mem_region_is_phys(reg->place_phys)) {
         vm_copy_img_to_rgn(vm, config, reg);
         vm_map_mem_region(vm, reg);
     } else if(config->image.inplace) {
@@ -258,6 +277,14 @@ void vm_init(struct vm* vm, const struct vm_config* config, bool master, vmid_t 
     vm_cpu_init(vm);
 
     cpu_sync_barrier(&vm->sync);
+    //cpu_sync_memprot();
+
+    /*
+     *  Update VM AS cpu bitmap with VM cpu affinity.
+     */
+    if (master) {
+        vm_update_as(vm);
+    }
 
     /*
      *  Initialize each virtual core.
@@ -265,6 +292,7 @@ void vm_init(struct vm* vm, const struct vm_config* config, bool master, vmid_t 
     vm_vcpu_init(vm, config);
 
     cpu_sync_barrier(&vm->sync);
+    //cpu_sync_memprot();
 
     /**
      * Perform architecture dependent initializations. This includes,
@@ -284,6 +312,7 @@ void vm_init(struct vm* vm, const struct vm_config* config, bool master, vmid_t 
     }
 
     cpu_sync_barrier(&vm->sync);
+    //cpu_sync_memprot();
 }
 
 struct vcpu* vm_get_vcpu(struct vm* vm, vcpuid_t vcpuid)

@@ -26,4 +26,3 @@ void uart_puts(volatile struct lpuart *uart, char const* str){
         uart_putc(uart, *str++);
     }
 }
-

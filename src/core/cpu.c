@@ -23,6 +23,7 @@ struct cpu_msg_node {
 OBJPOOL_ALLOC(msg_pool, struct cpu_msg_node, CPU_MSG_POOL_SIZE);
 
 struct cpu_synctoken cpu_glb_sync = {.ready = false};
+struct cpu_synctoken cpu_mem_sync = {.ready = false};
 
 extern uint8_t _ipi_cpumsg_handlers_start;
 extern uint8_t _ipi_cpumsg_handlers_size;
@@ -88,6 +89,10 @@ void cpu_msg_handler()
     }
 }
 
+void cpu_empty_mailbox(){
+    cpu_msg_handler();
+}
+
 void cpu_idle()
 {
     cpu_arch_idle();
@@ -112,4 +117,11 @@ void cpu_idle_wakeup()
     } else {
         cpu_idle();
     }
+}
+
+struct shared_region* cpu_msg_get_mem_alloc()
+{
+    struct shared_region *node = objpool_alloc(&msg_pool);
+    if (node == NULL) ERROR("cant allocate msg node");
+    return node;
 }

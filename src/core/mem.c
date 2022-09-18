@@ -165,6 +165,7 @@ bool mem_reserve_ppages(struct ppages *ppages)
 bool mem_map_dev(struct addr_space *as, vaddr_t va, paddr_t base,
                 size_t n)
 {
+    if(va == NULL_VA) va = base;
     struct ppages pages = mem_ppages_get(base, n);
     return mem_map(as, va, &pages, n,
                    as->type == AS_HYP ? PTE_HYP_DEV_FLAGS : PTE_VM_DEV_FLAGS);
@@ -197,7 +198,7 @@ bool root_pool_set_up_bitmap(paddr_t load_addr, struct page_pool *root_pool)
     bitmap_t* root_bitmap = (bitmap_t*) 
         mem_alloc_map(&cpu()->as, SEC_HYP_GLOBAL, &bitmap_pp, NULL_VA, bitmap_size, PTE_HYP_FLAGS);
     root_pool->bitmap = root_bitmap;
-    memset((void*)root_pool->bitmap, 0, bitmap_size * PAGE_SIZE);
+    memset((void*)root_pool->bitmap, 0, (bitmap_size * PAGE_SIZE)-1);
 
     return mem_reserve_ppool_ppages(root_pool, &bitmap_pp);
 }
@@ -292,8 +293,9 @@ bool mem_reserve_physical_memory(struct page_pool *pool)
         /* for every mem region */
         for (size_t j = 0; j < vm_cfg->platform.region_num; j++) {
             struct vm_mem_region *reg = &vm_cfg->platform.regions[j];
-            if (reg->place_phys) {
+            if (vm_mem_region_is_phys(reg->place_phys)) {
                 size_t n_pg = NUM_PAGES(reg->size);
+                reg->phys = vm_mem_region_get_phys(reg->phys, reg->base);
                 struct ppages ppages = mem_ppages_get(reg->phys, n_pg);
                 if (!mem_reserve_ppool_ppages(pool, &ppages)) {
                     return false;

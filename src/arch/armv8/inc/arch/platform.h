@@ -33,6 +33,10 @@ struct arch_platform {
         size_t num;
         size_t* core_num;
     } clusters;
+
+    struct {
+        unsigned long mp_entries;
+    } memory_protection;
 };
 
 struct platform;

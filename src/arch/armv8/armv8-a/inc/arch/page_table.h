@@ -120,6 +120,8 @@
 #define PTE_VM_DEV_FLAGS \
     (PTE_MEMATTR_DEV_GRE | PTE_SH_NS | PTE_S2AP_RW | PTE_AF)
 
+#define PTE_VM_IMG_FLAGS PTE_VM_FLAGS 
+
 #ifndef __ASSEMBLER__
 
 typedef uint64_t pte_t;

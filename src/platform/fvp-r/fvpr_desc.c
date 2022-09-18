@@ -33,6 +33,10 @@ struct platform platform = {
 
         .generic_timer = {
             .base_addr = 0xAA430000
+        },
+
+        .memory_protection = {
+            .mp_entries = 32
         }
     }
 

@@ -134,6 +134,19 @@ static inline void arm_dc_civac(vaddr_t cache_addr) {
     sysreg_dccivac_write(cache_addr);
 }
 
+/*
+ * MPU Registers
+ */
+SYSREG_GEN_ACCESSORS(prselr,  0, c6, c2, 1);
+SYSREG_GEN_ACCESSORS(prbar,   0, c6, c3, 0);
+SYSREG_GEN_ACCESSORS(prlar,   0, c6, c3, 1);
+SYSREG_GEN_ACCESSORS(mpuir,   0, c0, c0, 4);
+SYSREG_GEN_ACCESSORS(hprselr, 4, c6, c2, 1);
+SYSREG_GEN_ACCESSORS(hprbar,  4, c6, c3, 0);
+SYSREG_GEN_ACCESSORS(hprlar,  4, c6, c3, 1);
+SYSREG_GEN_ACCESSORS(hprenr,  4, c6, c1, 1);
+SYSREG_GEN_ACCESSORS(hmpuir,  4, c0, c0, 4);
+
 #endif /* |__ASSEMBLER__ */
 
 #endif /* ARCH_PROFILE_SYSREGS_H */
