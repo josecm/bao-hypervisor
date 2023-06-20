@@ -208,7 +208,10 @@ hyp_irq_handler:
 
 .global hyp_fiq_handler
 hyp_fiq_handler:
-    b   .
+    VM_EXIT
+    SET_SP
+    bl  gic_handle
+    VM_ENTRY
 
 
 .global vcpu_arch_entry

@@ -39,6 +39,7 @@ struct vm_arch {
     struct emul_mem vgicr_emul;
     struct emul_reg icc_sgir_emul;
     struct emul_reg icc_sre_emul;
+    struct emul_reg icc_ctrl_emul;
 };
 
 struct vcpu_arch {

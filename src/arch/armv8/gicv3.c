@@ -33,9 +33,9 @@ static inline void gicc_init()
 
     sysreg_icc_pmr_el1_write(GIC_LOWEST_PRIO);
     sysreg_icc_bpr1_el1_write(0x0);
-    sysreg_icc_ctlr_el1_write(ICC_CTLR_EOIMode_BIT);
-    sysreg_ich_hcr_el2_write(sysreg_ich_hcr_el2_read() | ICH_HCR_LRENPIE_BIT);
-    sysreg_icc_igrpen1_el1_write(ICC_IGRPEN_EL1_ENB_BIT);
+    // sysreg_icc_ctlr_el1_write(ICC_CTLR_EOIMode_BIT);
+    sysreg_ich_hcr_el2_write(sysreg_ich_hcr_el2_read() | ICH_HCR_LRENPIE_BIT | ICH_HCR_TC_BIT);
+    sysreg_icc_igrpen0_el1_write(ICC_IGRPEN_EL1_ENB_BIT);
 }
 
 static inline void gicr_init()
@@ -43,7 +43,12 @@ static inline void gicr_init()
     gicr[cpu()->id].WAKER &= ~GICR_WAKER_ProcessorSleep_BIT;
     while(gicr[cpu()->id].WAKER & GICR_WAKER_ChildrenASleep_BIT);
 
+    INFO("gicr[%d].IGROUPR0 = 0x%lx", cpu()->id, gicr[cpu()->id].IGROUPR0);
     gicr[cpu()->id].IGROUPR0 = -1;
+    INFO("gicr[%d].IGROUPR0 = 0x%lx", cpu()->id, gicr[cpu()->id].IGROUPR0);
+    INFO("gicr[%d].IGRPMODR0 = 0x%lx", cpu()->id, gicr[cpu()->id].IGRPMODR0);
+    gicr[cpu()->id].IGRPMODR0 = -1;
+    INFO("gicr[%d].IGRPMODR0 = 0x%lx", cpu()->id, gicr[cpu()->id].IGRPMODR0);
     gicr[cpu()->id].ICENABLER0 = -1;
     gicr[cpu()->id].ICPENDR0 = -1;
     gicr[cpu()->id].ICACTIVER0 = -1;

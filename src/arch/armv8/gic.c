@@ -33,7 +33,7 @@ void gicd_init()
          * Make sure all interrupts are not enabled, non pending,
          * non active.
          */
-        gicd->IGROUPR[i] = -1;
+        // gicd->IGROUPR[i] = -1;
         gicd->ICENABLER[i] = -1;
         gicd->ICPENDR[i] = -1;
         gicd->ICACTIVER[i] = -1;
@@ -61,7 +61,7 @@ void gicd_init()
         }
 
         /* Enable distributor and affinity routing */
-        gicd->CTLR |= GICD_CTLR_ARE_NS_BIT | GICD_CTLR_ENA_BIT;
+        gicd->CTLR |= GICD_CTLR_ARE_NS_BIT | GICD_CTLR_ENA_BIT | 1;
     }
 
     /* ICFGR are platform dependent, lets leave them as is */
@@ -94,10 +94,12 @@ void gic_init()
 
 void gic_handle()
 {
+    INFO("gic handle!");
     uint32_t ack = gicc_iar();
     irqid_t id = bit32_extract(ack, GICC_IAR_ID_OFF, GICC_IAR_ID_LEN);
 
     if (id < GIC_FIRST_SPECIAL_INTID) {
+        INFO("gic handle %ld", id);
         enum irq_res res = interrupts_handle(id);
         gicc_eoir(ack);
         if (res == HANDLED_BY_HYP) gicc_dir(ack);

@@ -272,6 +272,7 @@ struct gicc_hw {
 
 #define ICH_HCR_VGrp1EIE_BIT (1ULL << 6)
 #define ICH_HCR_LRENPIE_BIT GICH_HCR_LRENPIE_BIT
+#define ICH_HCR_TC_BIT (1 << 10)
 
 #define GICH_VTR_OFF (0)
 #define GICH_VTR_LEN (6)

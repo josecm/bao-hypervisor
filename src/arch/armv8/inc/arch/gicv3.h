@@ -87,11 +87,11 @@ static inline uint64_t gich_get_elrsr()
 }
 
 static inline uint32_t gicc_iar() {
-    return sysreg_icc_iar1_el1_read();
+    return sysreg_icc_iar0_el1_read();
 }
 
 static inline void gicc_eoir(uint32_t eoir) {
-    sysreg_icc_eoir1_el1_write(eoir);
+    sysreg_icc_eoir0_el1_write(eoir);
 }
 
 static inline void gicc_dir(uint32_t dir) {

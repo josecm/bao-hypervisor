@@ -292,6 +292,16 @@ bool vgic_icc_sre_handler(struct emul_access *acc)
     return true;
 }
 
+bool vgic_icc_ctlr_handler(struct emul_access *acc)
+{
+    if (acc->write) {
+        sysreg_icc_ctlr_el1_write(vcpu_readreg(cpu()->vcpu, acc->reg));
+    } else {
+        vcpu_writereg(cpu()->vcpu, sysreg_icc_ctlr_el1_read(), acc->reg);
+    }
+    return true;
+}
+
 void vgic_init(struct vm *vm, const struct vgic_dscrp *vgic_dscrp)
 {
     vm->arch.vgicr_addr = vgic_dscrp->gicr_addr;
@@ -361,6 +371,12 @@ void vgic_init(struct vm *vm, const struct vgic_dscrp *vgic_dscrp)
         .handler = vgic_icc_sre_handler
     };
     vm_emul_add_reg(vm, &vm->arch.icc_sre_emul);
+
+    vm->arch.icc_ctrl_emul = (struct emul_reg) {
+        .addr = SYSREG_ENC_ADDR(3, 0, 12, 12, 4),
+        .handler = vgic_icc_ctlr_handler
+    };
+    vm_emul_add_reg(vm, &vm->arch.icc_ctrl_emul);
 
     list_init(&vm->arch.vgic_spilled);
     vm->arch.vgic_spilled_lock = SPINLOCK_INITVAL;
