@@ -1,0 +1,30 @@
+name: Test Builds for the Arm Architecture
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+
+  build-arm:
+    runs-on: ubuntu-latest
+    container: baoproject/bao:latest
+    strategy:
+      matrix:
+        platform: [
+          "qemu-aarch64-virt",
+          "fvp-a-aarch32",
+          "fvp-r-aarch64",
+          "fvp-r-aarch32"
+        ]
+        gic: [
+          "GICV2",
+          "GICV3",
+        ]
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - run: make PLATFORM=${{ matrix.platform }} GIC_VERSION=${{ matrix.gic }} CONFIG=null

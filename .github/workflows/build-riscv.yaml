@@ -1,0 +1,27 @@
+name: Test Builds for the RISC-V Architecture
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+
+  build-arm:
+    runs-on: ubuntu-latest
+    container: baoproject/bao:latest
+    strategy:
+      matrix:
+        platform: [
+          "qemu-riscv-virt",
+        ]
+        irqc: [
+          "PLIC",
+          "APLIC",
+        ]
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - run: make PLATFORM=${{ matrix.platform }} IRQC=${{ matrix.gic }} CONFIG=null
