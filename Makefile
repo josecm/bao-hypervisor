@@ -30,9 +30,6 @@ OPTIMIZATIONS:=2
 CONFIG=
 PLATFORM=
 
-# List existing submakes
-submakes:=config
-
 # Directories
 cur_dir:=$(current_directory)
 src_dir:=$(cur_dir)/src
@@ -43,11 +40,22 @@ platforms_dir=$(src_dir)/platform
 configs_dir=$(cur_dir)/configs
 CONFIG_REPO?=$(configs_dir)
 scripts_dir:=$(cur_dir)/scripts
+ci_dir:=$(cur_dir)/ci
 src_dirs:=
 
-#Plataform must be defined excpet for clean target
+include $(ci_dir)/ci.mk
+
+targets:=$(MAKECMDGOALS)
+ifeq ($(targets),)
+targets:=all
+endif
+non_build_targets+=ci clean
+build_targets:=$(strip $(foreach target, $(targets), \
+	$(if $(findstring $(target),$(non_build_targets)),,$(target))))
+
+#Plataform must be defined excpet for non-build-targets
 ifeq ($(PLATFORM),)
-ifneq ($(MAKECMDGOALS), clean)
+ifneq ($(build_targets),)
  $(error Target platform argument (PLATFORM) not specified)
 endif
 endif
@@ -138,7 +146,7 @@ gens+=$(platform_defs) $(platform_def_generator)
 inc_dirs+=$(platform_build_dir)
 
 
-ifneq ($(MAKECMDGOALS), clean)
+ifneq ($(build_targets),)
 ifeq ($(CONFIG),)
 $(error Configuration (CONFIG) not defined.)
 endif
@@ -179,6 +187,8 @@ override LDFLAGS+=-build-id=none -nostdlib --fatal-warnings \
 	-z common-page-size=$(PAGE_SIZE) -z max-page-size=$(PAGE_SIZE) \
 	$(arch-ldflags) $(platform-ldflags)
 
+ifneq ($(build_targets),)
+
 .PHONY: all
 all: $(targets-y)
 
@@ -198,7 +208,7 @@ $(ld_script_temp):
 	@$(cc) -E $(addprefix -I, $(inc_dirs)) -x assembler-with-cpp  $(CPPFLAGS) \
 		$(ld_script) | grep -v '^\#' > $(ld_script_temp)
 
-ifeq (, $(findstring $(MAKECMDGOALS), clean $(submakes)))
+ifneq ($(build_targets),)
 -include $(deps)
 endif
 
@@ -272,6 +282,8 @@ $(objs-y) $(deps) $(targets-y) $(gens): | $$(@D)
 $(directories):
 	@echo "Creating directory	$(patsubst $(cur_dir)/%, %, $@)"
 	@mkdir -p $@
+
+endif
 
 #Clean all object, dependency and generated files
 
