@@ -175,8 +175,17 @@ ifeq ($(DEBUG), y)
 	debug_flags:=-g
 endif
 
-override CFLAGS+=-O$(OPTIMIZATIONS) -Wall -Werror -ffreestanding -std=gnu11 \
-	-fno-pic $(arch-cflags) $(platform-cflags) $(CPPFLAGS) $(debug_flags)
+cflags_warns:= \
+	-Waggregate-return -Warith-conversion -Wbuiltin-declaration-mismatch \
+	-Wcast-qual -Wcomments -Wconversion  -Wdiscarded-qualifiers \
+	-Wmissing-declarations -Wmissing-prototypes -Wimplicit-fallthrough \
+	-Wswitch-unreachable -Wreturn-local-addr -Wshadow -Wshadow=global \
+	-Wshift-count-negative -Wsign-conversion -Wswitch-default -Wuninitialized \
+	-Wunused -Wunused-local-typedefs -Wunused-macros -Wunused-parameter \
+	-Wunused-result -Wvla
+override CFLAGS+=-O$(OPTIMIZATIONS) -Wall -Werror -Wextra $(cflags_warns) \
+	-std=c11 -pedantic -pedantic-errors -fno-pic -ffreestanding \
+	$(arch-cflags) $(platform-cflags) $(CPPFLAGS) $(debug_flags)
 
 override ASFLAGS+=$(CFLAGS) $(arch-asflags) $(platform-asflags)
 
