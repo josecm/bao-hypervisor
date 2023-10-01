@@ -31,7 +31,7 @@ void cpu_arch_idle()
      * point and just returns from the profile, manually rewind stack and jump 
      * to idle wake up. Therefore, we should not return after this point.
      */
-    asm volatile(
+    __asm__ volatile(
         "mov sp, %0\n\r"
         "b cpu_idle_wakeup\n\r"
         ::"r"(&cpu()->stack[STACK_SIZE]));

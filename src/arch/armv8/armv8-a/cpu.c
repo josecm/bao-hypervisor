@@ -34,7 +34,7 @@ void cpu_arch_profile_idle() {
                 /**
                  * If power down is not supported let's just wait for an interrupt
                  */
-                asm volatile("wfi");
+                __asm__ volatile("wfi");
                 break;
             default:
                 ERROR("PSCI cpu%d power down failed with error %ld", cpu()->id, err);
