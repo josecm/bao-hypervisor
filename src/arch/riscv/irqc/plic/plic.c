@@ -60,7 +60,7 @@ void plic_cpu_init()
     plic_hart[cpu()->arch.plic_cntxt].threshold = 0;
 }
 
-bool plic_cntxt_valid(unsigned cntxt_id) {
+static bool plic_cntxt_valid(unsigned cntxt_id) {
     struct plic_cntxt cntxt = plic_plat_id_to_cntxt(cntxt_id);
     return (cntxt_id < PLIC_PLAT_CNTXT_NUM) && (cntxt.mode <= PRIV_S);
 }

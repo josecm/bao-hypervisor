@@ -38,7 +38,7 @@ void interrupts_arch_ipi_send(cpuid_t target_cpu, irqid_t ipi_id)
     sbi_send_ipi(1ULL << target_cpu, 0);
 }
 
-void interrupts_arch_cpu_enable(bool en)
+static void interrupts_arch_cpu_enable(bool en)
 {
     if (en) {
         CSRS(sstatus, SSTATUS_SIE_BIT);

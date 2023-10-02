@@ -226,7 +226,7 @@ void sbi_msg_handler(uint32_t event, uint64_t data)
     }
 }
 
-struct sbiret sbi_time_handler(unsigned long fid)
+static struct sbiret sbi_time_handler(unsigned long fid)
 {
     if (fid != SBI_SET_TIMER_FID) return (struct sbiret){SBI_ERR_NOT_SUPPORTED};
 
@@ -242,13 +242,13 @@ struct sbiret sbi_time_handler(unsigned long fid)
     return (struct sbiret){SBI_SUCCESS};
 }
 
-void sbi_timer_irq_handler()
+static void sbi_timer_irq_handler()
 {
     CSRS(CSR_HVIP, HIP_VSTIP);
     CSRC(sie, SIE_STIE);
 }
 
-struct sbiret sbi_ipi_handler(unsigned long fid)
+static struct sbiret sbi_ipi_handler(unsigned long fid)
 {
     if (fid != SBI_SEND_IPI_FID) return (struct sbiret){SBI_ERR_NOT_SUPPORTED};
 
@@ -271,7 +271,7 @@ struct sbiret sbi_ipi_handler(unsigned long fid)
     return (struct sbiret){SBI_SUCCESS};
 }
 
-struct sbiret sbi_base_handler(unsigned long fid)
+static struct sbiret sbi_base_handler(unsigned long fid)
 {
     struct sbiret ret = {.error = SBI_SUCCESS};
     unsigned long extid = vcpu_readreg(cpu()->vcpu, REG_A0);
@@ -298,7 +298,7 @@ struct sbiret sbi_base_handler(unsigned long fid)
     return ret;
 }
 
-struct sbiret sbi_rfence_handler(unsigned long fid)
+static struct sbiret sbi_rfence_handler(unsigned long fid)
 {
     struct sbiret ret;
 
@@ -338,7 +338,7 @@ struct sbiret sbi_rfence_handler(unsigned long fid)
     return ret;
 }
 
-struct sbiret sbi_hsm_start_handler() {
+static struct sbiret sbi_hsm_start_handler() {
     
     struct sbiret ret;
     vcpuid_t vhart_id = vcpu_readreg(cpu()->vcpu, REG_A0);
@@ -380,7 +380,7 @@ struct sbiret sbi_hsm_start_handler() {
     return ret;
 }
 
-struct sbiret sbi_hsm_status_handler() {
+static struct sbiret sbi_hsm_status_handler() {
 
     struct sbiret ret;
     vcpuid_t vhart_id = vcpu_readreg(cpu()->vcpu, REG_A0);
@@ -396,7 +396,7 @@ struct sbiret sbi_hsm_status_handler() {
     return ret;
 }
 
-struct sbiret sbi_hsm_handler(unsigned long fid){
+static struct sbiret sbi_hsm_handler(unsigned long fid){
 
     struct sbiret ret;
 
@@ -414,7 +414,7 @@ struct sbiret sbi_hsm_handler(unsigned long fid){
    return ret; 
 }
 
-struct sbiret sbi_bao_handler(unsigned long fid){
+static struct sbiret sbi_bao_handler(unsigned long fid){
 
    struct sbiret ret;
 

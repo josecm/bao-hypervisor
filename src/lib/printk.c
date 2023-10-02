@@ -11,7 +11,7 @@
 
 #define PRINT_TEXT_LEN 0x100
 
-size_t vsprintk(char *buf, const char *fmt, va_list args)
+static size_t vsprintk(char *buf, const char *fmt, va_list args)
 {
     char *str;
     str = buf;

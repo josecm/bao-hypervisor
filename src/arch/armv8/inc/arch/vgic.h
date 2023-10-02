@@ -111,8 +111,6 @@ bool vgic_check_reg_alignment(struct emul_access *acc,
                               struct vgic_reg_handler_info *handlers);
 bool vgic_add_lr(struct vcpu *vcpu, struct vgic_int *interrupt);
 bool vgic_remove_lr(struct vcpu *vcpu, struct vgic_int *interrupt);
-bool vgic_get_ownership(struct vcpu *vcpu, struct vgic_int *interrupt);
-void vgic_yield_ownership(struct vcpu *vcpu, struct vgic_int *interrupt);
 void vgic_emul_generic_access(struct emul_access *, struct vgic_reg_handler_info *,
                               bool, vcpuid_t);
 void vgic_send_sgi_msg(struct vcpu *vcpu, cpumap_t pcpu_mask, irqid_t int_id);

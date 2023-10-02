@@ -99,7 +99,7 @@ static inline uint8_t vgic_get_state(struct vgic_int *interrupt)
     return state;
 }
 
-bool vgic_get_ownership(struct vcpu *vcpu, struct vgic_int *interrupt)
+static bool vgic_get_ownership(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
     bool ret = false;
 
@@ -113,12 +113,12 @@ bool vgic_get_ownership(struct vcpu *vcpu, struct vgic_int *interrupt)
     return ret;
 }
 
-bool vgic_owns(struct vcpu *vcpu, struct vgic_int *interrupt)
+static bool vgic_owns(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
     return interrupt->owner == vcpu;
 }
 
-void vgic_yield_ownership(struct vcpu *vcpu, struct vgic_int *interrupt)
+static void vgic_yield_ownership(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
     if ((GIC_VERSION == GICV2 && gic_is_priv(interrupt->id)) ||
         !vgic_owns(vcpu, interrupt) || interrupt->in_lr ||
@@ -144,7 +144,7 @@ void vgic_send_sgi_msg(struct vcpu *vcpu, cpumap_t pcpu_mask, irqid_t int_id)
     }
 }
 
-void vgic_route(struct vcpu *vcpu, struct vgic_int *interrupt)
+static void vgic_route(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
     if ((interrupt->state == INV) || !interrupt->enabled) {
         return;
@@ -285,7 +285,7 @@ bool vgic_remove_lr(struct vcpu *vcpu, struct vgic_int *interrupt)
     return ret;
 }
 
-void vgic_add_spilled(struct vcpu *vcpu, struct vgic_int* interrupt) {
+static void vgic_add_spilled(struct vcpu *vcpu, struct vgic_int* interrupt) {
     spin_lock(&vcpu->vm->arch.vgic_spilled_lock);
     struct list *spilled_list = NULL;
     if (gic_is_priv(interrupt->id)) {
@@ -298,7 +298,7 @@ void vgic_add_spilled(struct vcpu *vcpu, struct vgic_int* interrupt) {
     gich_set_hcr(gich_get_hcr() | GICH_HCR_NPIE_BIT);
 }
 
-void vgic_spill_lr(struct vcpu *vcpu, unsigned lr_ind) {
+static void vgic_spill_lr(struct vcpu *vcpu, unsigned lr_ind) {
     unsigned long lr = gich_read_lr(lr_ind);
     struct vgic_int *spilled_int = vgic_get_int(vcpu, GICH_LR_VID(lr), vcpu->id);
 
@@ -396,7 +396,7 @@ static inline void vgic_update_enable(struct vcpu *vcpu)
     }
 }
 
-void vgicd_emul_misc_access(struct emul_access *acc,
+static void vgicd_emul_misc_access(struct emul_access *acc,
                             struct vgic_reg_handler_info *handlers,
                             bool gicr_access, cpuid_t vgicr_id)
 {
@@ -438,7 +438,7 @@ void vgicd_emul_misc_access(struct emul_access *acc,
     }
 }
 
-void vgicd_emul_pidr_access(struct emul_access *acc,
+static void vgicd_emul_pidr_access(struct emul_access *acc,
                             struct vgic_reg_handler_info *handlers,
                             bool gicr_access, cpuid_t vgicr_id)
 {
@@ -451,7 +451,7 @@ void vgicd_emul_pidr_access(struct emul_access *acc,
     }
 }
 
-bool vgic_int_update_enable(struct vcpu *vcpu, struct vgic_int *interrupt, bool enable)
+static bool vgic_int_update_enable(struct vcpu *vcpu, struct vgic_int *interrupt, bool enable)
 {
     UNUSED_ARG(vcpu);
 
@@ -467,7 +467,7 @@ bool vgic_int_update_enable(struct vcpu *vcpu, struct vgic_int *interrupt, bool 
     }
 }
 
-void vgic_int_enable_hw(struct vcpu *vcpu, struct vgic_int *interrupt)
+static void vgic_int_enable_hw(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
     UNUSED_ARG(vcpu);
 #if (GIC_VERSION != GICV2)
@@ -482,7 +482,7 @@ void vgic_int_enable_hw(struct vcpu *vcpu, struct vgic_int *interrupt)
 #endif
 }
 
-bool vgic_int_clear_enable(struct vcpu *vcpu, struct vgic_int *interrupt, unsigned long data)
+static bool vgic_int_clear_enable(struct vcpu *vcpu, struct vgic_int *interrupt, unsigned long data)
 {
     if (!data)
         return false;
@@ -490,7 +490,7 @@ bool vgic_int_clear_enable(struct vcpu *vcpu, struct vgic_int *interrupt, unsign
         return vgic_int_update_enable(vcpu, interrupt, false);
 }
 
-bool vgic_int_set_enable(struct vcpu *vcpu, struct vgic_int *interrupt, unsigned long data)
+static bool vgic_int_set_enable(struct vcpu *vcpu, struct vgic_int *interrupt, unsigned long data)
 {
     if (!data)
         return false;
@@ -498,13 +498,13 @@ bool vgic_int_set_enable(struct vcpu *vcpu, struct vgic_int *interrupt, unsigned
         return vgic_int_update_enable(vcpu, interrupt, true);
 }
 
-unsigned long vgic_int_get_enable(struct vcpu *vcpu, struct vgic_int *interrupt)
+static unsigned long vgic_int_get_enable(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
     UNUSED_ARG(vcpu);
     return (unsigned long)interrupt->enabled;
 }
 
-bool vgic_int_update_pend(struct vcpu *vcpu, struct vgic_int *interrupt, bool pend)
+static bool vgic_int_update_pend(struct vcpu *vcpu, struct vgic_int *interrupt, bool pend)
 {
     UNUSED_ARG(vcpu);
 
@@ -523,7 +523,7 @@ bool vgic_int_update_pend(struct vcpu *vcpu, struct vgic_int *interrupt, bool pe
     }
 }
 
-void vgic_int_state_hw(struct vcpu *vcpu, struct vgic_int *interrupt)
+static void vgic_int_state_hw(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
     uint8_t state = interrupt->state == PEND ? ACT : interrupt->state;
     bool pend = (state & PEND) != 0;
@@ -543,7 +543,7 @@ void vgic_int_state_hw(struct vcpu *vcpu, struct vgic_int *interrupt)
 #endif
 }
 
-bool vgic_int_clear_pend(struct vcpu *vcpu, struct vgic_int *interrupt, unsigned long data)
+static bool vgic_int_clear_pend(struct vcpu *vcpu, struct vgic_int *interrupt, unsigned long data)
 {
     if (!data)
         return false;
@@ -551,7 +551,7 @@ bool vgic_int_clear_pend(struct vcpu *vcpu, struct vgic_int *interrupt, unsigned
         return vgic_int_update_pend(vcpu, interrupt, false);
 }
 
-bool vgic_int_set_pend(struct vcpu *vcpu, struct vgic_int *interrupt, unsigned long data)
+static bool vgic_int_set_pend(struct vcpu *vcpu, struct vgic_int *interrupt, unsigned long data)
 {
     if (!data)
         return false;
@@ -559,13 +559,13 @@ bool vgic_int_set_pend(struct vcpu *vcpu, struct vgic_int *interrupt, unsigned l
         return vgic_int_update_pend(vcpu, interrupt, true);
 }
 
-unsigned long vgic_int_get_pend(struct vcpu *vcpu, struct vgic_int *interrupt)
+static unsigned long vgic_int_get_pend(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
     UNUSED_ARG(vcpu);
     return (interrupt->state & PEND) ? 1 : 0;
 }
 
-bool vgic_int_update_act(struct vcpu *vcpu, struct vgic_int *interrupt, bool act)
+static bool vgic_int_update_act(struct vcpu *vcpu, struct vgic_int *interrupt, bool act)
 {
     UNUSED_ARG(vcpu);
     if (act ^ !!(interrupt->state & ACT)) {
@@ -579,7 +579,7 @@ bool vgic_int_update_act(struct vcpu *vcpu, struct vgic_int *interrupt, bool act
     }
 }
 
-bool vgic_int_clear_act(struct vcpu *vcpu, struct vgic_int *interrupt, unsigned long data)
+static bool vgic_int_clear_act(struct vcpu *vcpu, struct vgic_int *interrupt, unsigned long data)
 {
     if (!data)
         return false;
@@ -587,7 +587,7 @@ bool vgic_int_clear_act(struct vcpu *vcpu, struct vgic_int *interrupt, unsigned 
         return vgic_int_update_act(vcpu, interrupt, false);
 }
 
-bool vgic_int_set_act(struct vcpu *vcpu, struct vgic_int *interrupt, unsigned long data)
+static bool vgic_int_set_act(struct vcpu *vcpu, struct vgic_int *interrupt, unsigned long data)
 {
     if (!data)
         return false;
@@ -595,13 +595,13 @@ bool vgic_int_set_act(struct vcpu *vcpu, struct vgic_int *interrupt, unsigned lo
         return vgic_int_update_act(vcpu, interrupt, true);
 }
 
-unsigned long vgic_int_get_act(struct vcpu *vcpu, struct vgic_int *interrupt)
+static unsigned long vgic_int_get_act(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
     UNUSED_ARG(vcpu);
     return (interrupt->state & ACT) ? 1 : 0;
 }
 
-bool vgic_int_set_cfg(struct vcpu *vcpu, struct vgic_int *interrupt, unsigned long cfg)
+static bool vgic_int_set_cfg(struct vcpu *vcpu, struct vgic_int *interrupt, unsigned long cfg)
 {
     uint8_t prev_cfg = interrupt->cfg;
     UNUSED_ARG(vcpu);
@@ -609,13 +609,13 @@ bool vgic_int_set_cfg(struct vcpu *vcpu, struct vgic_int *interrupt, unsigned lo
     return prev_cfg != cfg;
 }
 
-unsigned long vgic_int_get_cfg(struct vcpu *vcpu, struct vgic_int *interrupt)
+static unsigned long vgic_int_get_cfg(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
     UNUSED_ARG(vcpu);
     return (unsigned long)interrupt->cfg;
 }
 
-void vgic_int_set_cfg_hw(struct vcpu *vcpu, struct vgic_int *interrupt)
+static void vgic_int_set_cfg_hw(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
     UNUSED_ARG(vcpu);
 #if (GIC_VERSION != GICV2)
@@ -629,7 +629,7 @@ void vgic_int_set_cfg_hw(struct vcpu *vcpu, struct vgic_int *interrupt)
 #endif
 }
 
-bool vgic_int_set_prio(struct vcpu *vcpu, struct vgic_int *interrupt, unsigned long prio)
+static bool vgic_int_set_prio(struct vcpu *vcpu, struct vgic_int *interrupt, unsigned long prio)
 {
     uint8_t prev_prio = interrupt->prio;
     UNUSED_ARG(vcpu);
@@ -638,13 +638,13 @@ bool vgic_int_set_prio(struct vcpu *vcpu, struct vgic_int *interrupt, unsigned l
     return prev_prio != prio;
 }
 
-unsigned long vgic_int_get_prio(struct vcpu *vcpu, struct vgic_int *interrupt)
+static unsigned long vgic_int_get_prio(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
     UNUSED_ARG(vcpu);
     return (unsigned long)interrupt->prio;
 }
 
-void vgic_int_set_prio_hw(struct vcpu *vcpu, struct vgic_int *interrupt)
+static void vgic_int_set_prio_hw(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
     UNUSED_ARG(vcpu);
 #if (GIC_VERSION != GICV2)
@@ -850,7 +850,7 @@ struct vgic_reg_handler_info *reg_handler_info_table[VGIC_REG_HANDLER_ID_NUM] =
      [VGIC_IPRIORITYR_ID] = &ipriorityr_info,
      [VGIC_ITARGETSR_ID] = &itargetr_info};
 
-struct vgic_reg_handler_info 
+static struct vgic_reg_handler_info 
     *vgic_get_reg_handler_info(enum vgic_reg_handler_info_id id)
 {
     if (id < VGIC_REG_HANDLER_ID_NUM) {
@@ -1085,7 +1085,7 @@ static void vgic_eoir_highest_spilled_active(struct vcpu *vcpu)
     }
 }
 
-void vgic_handle_trapped_eoir(struct vcpu *vcpu)
+static void vgic_handle_trapped_eoir(struct vcpu *vcpu)
 {
     uint64_t eisr = gich_get_eisr();
     int64_t lr_ind = bit64_ffs(eisr & BIT64_MASK(0, NUM_LRS));

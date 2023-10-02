@@ -47,7 +47,7 @@ static inline bool mem_regions_overlap(struct mp_region *reg1,
  *  ii) It must allow the mapping and unmapping of regions on these MPUs, 
  * returning a binary return success value.
  */
-void mpu_init();
+void mpu_init(void);
 bool mpu_map(priv_t priv, struct mp_region* mem);
 bool mpu_unmap(priv_t priv, struct mp_region* mem);
 

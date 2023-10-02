@@ -486,7 +486,7 @@ void mem_unmap(struct addr_space *as, vaddr_t at, size_t num_pages,
     spin_unlock(&as->lock);
 }
 
-bool mem_map(struct addr_space *as, vaddr_t va, struct ppages *ppages,
+static bool mem_map(struct addr_space *as, vaddr_t va, struct ppages *ppages,
             size_t num_pages, mem_flags_t flags)
 {
     size_t count = 0;
@@ -719,7 +719,7 @@ vaddr_t mem_map_cpy(struct addr_space *ass, struct addr_space *asd, vaddr_t vas,
     return base_vad;
 }
 
-void *copy_space(void *base, const size_t size, struct ppages *pages)
+static void *copy_space(void *base, const size_t size, struct ppages *pages)
 {
     *pages = mem_alloc_ppages(cpu()->as.colors, NUM_PAGES(size), false);
     vaddr_t va = mem_alloc_vpage(&cpu()->as, SEC_HYP_PRIVATE, INVALID_VA, NUM_PAGES(size));

@@ -162,7 +162,7 @@ void gicr_set_pend(irqid_t int_id, bool pend, cpuid_t gicr_id)
     spin_unlock(&gicr_lock);
 }
 
-bool gicr_get_pend(irqid_t int_id, cpuid_t gicr_id)
+static bool gicr_get_pend(irqid_t int_id, cpuid_t gicr_id)
 {
     if (gic_is_priv(int_id)) {
         return !!(gicr[gicr_id].ISPENDR0 & GIC_INT_MASK(int_id));
@@ -184,7 +184,7 @@ void gicr_set_act(irqid_t int_id, bool act, cpuid_t gicr_id)
     spin_unlock(&gicr_lock);
 }
 
-bool gicr_get_act(irqid_t int_id, cpuid_t gicr_id)
+static bool gicr_get_act(irqid_t int_id, cpuid_t gicr_id)
 {
     if (gic_is_priv(int_id)) {
         return !!(gicr[gicr_id].ISACTIVER0 & GIC_INT_MASK(int_id));

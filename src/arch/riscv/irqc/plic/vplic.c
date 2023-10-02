@@ -113,7 +113,7 @@ enum {UPDATE_HART_LINE};
 static void vplic_ipi_handler(uint32_t event, uint64_t data);
 CPU_MSG_HANDLER(vplic_ipi_handler, VPLIC_IPI_ID)
 
-void vplic_update_hart_line(struct vcpu* vcpu, int vcntxt) 
+static void vplic_update_hart_line(struct vcpu* vcpu, int vcntxt) 
 {
     int pcntxt_id = vplic_vcntxt_to_pcntxt(vcpu, vcntxt);
     struct plic_cntxt pcntxt = plic_plat_id_to_cntxt(pcntxt_id);

@@ -34,7 +34,7 @@ void psci_wake_from_off() {
     spin_unlock(&cpu()->vcpu->arch.psci_ctx.lock);
 }
 
-void psci_cpumsg_handler(uint32_t event, uint64_t data){
+static void psci_cpumsg_handler(uint32_t event, uint64_t data){
 
     UNUSED_ARG(data);
 
@@ -47,7 +47,7 @@ void psci_cpumsg_handler(uint32_t event, uint64_t data){
 
 CPU_MSG_HANDLER(psci_cpumsg_handler, PSCI_CPUMSG_ID)
 
-int32_t psci_cpu_suspend_handler(uint32_t power_state, unsigned long entrypoint, 
+static int32_t psci_cpu_suspend_handler(uint32_t power_state, unsigned long entrypoint, 
                                                     unsigned long context_id)
 {
     /**
@@ -83,7 +83,7 @@ int32_t psci_cpu_suspend_handler(uint32_t power_state, unsigned long entrypoint,
 }
 
 
-int32_t psci_cpu_off_handler(void)
+static int32_t psci_cpu_off_handler(void)
 {
     /**
      *  Right now we only support one vcpu por cpu, so passthrough the request
@@ -104,7 +104,7 @@ int32_t psci_cpu_off_handler(void)
     return PSCI_E_DENIED;
 }
 
-int32_t psci_cpu_on_handler(unsigned long target_cpu, unsigned long entrypoint,
+static int32_t psci_cpu_on_handler(unsigned long target_cpu, unsigned long entrypoint,
                             unsigned long context_id)
 {
     int32_t ret;
@@ -145,7 +145,7 @@ int32_t psci_cpu_on_handler(unsigned long target_cpu, unsigned long entrypoint,
 }
 
 
-int32_t psci_affinity_info_handler(unsigned long  target_affinity, 
+static int32_t psci_affinity_info_handler(unsigned long  target_affinity, 
                                 uint32_t lowest_affinity_level)
 {
     /* return ON, if at least one core in the affinity instance: has been 
@@ -168,7 +168,7 @@ int32_t psci_affinity_info_handler(unsigned long  target_affinity,
     return 0;
 }
 
-int32_t psci_features_handler(uint32_t feature_id){
+static int32_t psci_features_handler(uint32_t feature_id){
 
     int32_t ret = PSCI_E_NOT_SUPPORTED;
 

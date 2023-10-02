@@ -23,7 +23,7 @@
 volatile struct gicd_hw *gicd;
 spinlock_t gicd_lock;
 
-void gicd_init()
+static void gicd_init()
 {
     size_t int_num = gic_num_irqs();
 
@@ -71,8 +71,6 @@ void gicd_init()
     interrupts_reserve(platform.arch.gic.maintenance_id,
                        gic_maintenance_handler);
 }
-
-void gic_map_mmio();
 
 void gic_init()
 {

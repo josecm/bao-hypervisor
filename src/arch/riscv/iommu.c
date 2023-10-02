@@ -236,7 +236,7 @@ static void rv_iommu_check_features(void)
 /**
  * RISC-V IOMMU Fault Queue IRQ handler.
  */
-void rv_iommu_fq_irq_handler(irqid_t irq_id)
+static void rv_iommu_fq_irq_handler(irqid_t irq_id)
 {
     // Read ipsr.fip
     uint32_t ipsr = rv_iommu.hw.reg_ptr->ipsr;
@@ -294,7 +294,7 @@ void rv_iommu_fq_irq_handler(irqid_t irq_id)
 /**
  * Init and enable RISC-V IOMMU. 
  */
-void rv_iommu_init(void)
+static void rv_iommu_init(void)
 {
     // Map register IF (4k)
     vaddr_t reg_ptr = mem_alloc_map_dev(&cpu()->as, SEC_HYP_GLOBAL, INVALID_VA,
@@ -369,7 +369,7 @@ void rv_iommu_init(void)
  * 
  * @returns true on success, false on error
  */
-bool rv_iommu_alloc_did(deviceid_t dev_id)
+static bool rv_iommu_alloc_did(deviceid_t dev_id)
 {
     bool allocated;
     spin_lock(&rv_iommu.ddt_lock);
@@ -396,7 +396,7 @@ bool rv_iommu_alloc_did(deviceid_t dev_id)
  * @vm:         VM to which the device is being assigned
  * @root_pt:    Base physical address of the root second-stage PT
  */
-void rv_iommu_write_ddt(deviceid_t dev_id, struct vm *vm, paddr_t root_pt)
+static void rv_iommu_write_ddt(deviceid_t dev_id, struct vm *vm, paddr_t root_pt)
 {
     spin_lock(&rv_iommu.ddt_lock);
     if (!bitmap_get(rv_iommu.ddt_bitmap, dev_id))

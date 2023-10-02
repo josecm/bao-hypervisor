@@ -8,7 +8,7 @@
 
 #include <bao.h>
 
-void console_init();
+void console_init(void);
 void console_write(char const* const str);
 
 #endif /* __CONSOLE_H__ */

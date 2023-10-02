@@ -166,7 +166,7 @@ static mpid_t mpu_entry_allocate()
     return reg_num;
 }
 
-bool mem_region_get_overlap(struct mp_region *reg1,  struct mp_region *reg2,
+static bool mem_region_get_overlap(struct mp_region *reg1,  struct mp_region *reg2,
     struct mp_region *overlap)
 {
     bool regions_overlap = mem_regions_overlap(reg1, reg2);

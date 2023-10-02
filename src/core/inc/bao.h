@@ -27,6 +27,8 @@
             ;                                                       \
     }
 
+void init(cpuid_t cpu_id, paddr_t load_addr);
+
 #endif /* __ASSEMBLER__ */
 
 #endif /* __BAO_H__ */
