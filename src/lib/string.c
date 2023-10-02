@@ -46,25 +46,6 @@ void *memset(void *dest, int c, size_t count)
     return dest;
 }
 
-char *strcat(char *dest, char *src)
-{
-    char *save = dest;
-
-    for (; *dest; ++dest);
-    while ((*dest++ = *src++) != 0);
-
-    return (save);
-}
-
-size_t strlen(const char *s)
-{
-    const char *sc;
-    for (sc = s; *sc != '\0'; ++sc) {
-        /* Just iterate */
-    }
-    return sc - s;
-}
-
 size_t strnlen(const char *s, size_t n)
 {
     const char *str;
@@ -73,26 +54,4 @@ size_t strnlen(const char *s, size_t n)
         /* Just iterate */
     }
     return str - s;
-}
-
-char *strcpy(char *dest, char *src)
-{
-    char *tmp = dest;
-
-    while ((*dest++ = *src++) != '\0') {
-        /* Just iterate */
-    }
-    return tmp;
-}
-
-int strcmp(char *str0, char *str1)
-{
-    char *tmp0 = str0, *tmp1 = str1;
-
-    while (*tmp0 == *tmp1 && ((*tmp0 != '\0') && (*tmp1 != '\0'))) {
-        tmp0++;
-        tmp1++;
-    }
-
-    return (int)(tmp0 - tmp1);
 }
