@@ -68,6 +68,8 @@ unsigned long ipc_hypercall(unsigned long ipc_id, unsigned long ipc_event,
 {
     unsigned long ret = -HC_E_SUCCESS;
 
+    UNUSED_ARG(arg2);
+
     struct shmem *shmem = NULL;
     bool valid_ipc_obj = ipc_id < cpu()->vcpu->vm->ipc_num;
     if(valid_ipc_obj) {

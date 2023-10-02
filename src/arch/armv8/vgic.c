@@ -135,6 +135,8 @@ void vgic_send_sgi_msg(struct vcpu *vcpu, cpumap_t pcpu_mask, irqid_t int_id)
         VGIC_IPI_ID, VGIC_INJECT,
         VGIC_MSG_DATA(cpu()->vcpu->vm->id, 0, int_id, 0, cpu()->vcpu->id)};
 
+    UNUSED_ARG(vcpu);
+
     for (size_t i = 0; i < platform.cpu_num; i++) {
         if (pcpu_mask & (1ull << i)) {
             cpu_send_msg(i, &msg);
@@ -386,6 +388,7 @@ bool vgic_add_lr(struct vcpu *vcpu, struct vgic_int *interrupt)
 
 static inline void vgic_update_enable(struct vcpu *vcpu)
 {
+    UNUSED_ARG(vcpu);
     if (cpu()->vcpu->vm->arch.vgicd.CTLR & VGIC_ENABLE_MASK) {
         gich_set_hcr(gich_get_hcr() | GICH_HCR_En_BIT);
     } else {
@@ -399,6 +402,10 @@ void vgicd_emul_misc_access(struct emul_access *acc,
 {
     struct vgicd *vgicd = &cpu()->vcpu->vm->arch.vgicd;
     unsigned reg = acc->addr & 0x7F;
+
+    UNUSED_ARG(handlers);
+    UNUSED_ARG(gicr_access);
+    UNUSED_ARG(vgicr_id);
 
     switch (reg) {
         case GICD_REG_IND(CTLR):
@@ -435,6 +442,9 @@ void vgicd_emul_pidr_access(struct emul_access *acc,
                             struct vgic_reg_handler_info *handlers,
                             bool gicr_access, cpuid_t vgicr_id)
 {
+    UNUSED_ARG(handlers);
+    UNUSED_ARG(gicr_access);
+    UNUSED_ARG(vgicr_id);
     if (!acc->write) {
         vcpu_writereg(cpu()->vcpu, acc->reg,
                       gicd->ID[((acc->addr & 0xff) - 0xd0) / 4]);
@@ -443,6 +453,8 @@ void vgicd_emul_pidr_access(struct emul_access *acc,
 
 bool vgic_int_update_enable(struct vcpu *vcpu, struct vgic_int *interrupt, bool enable)
 {
+    UNUSED_ARG(vcpu);
+
     if (GIC_VERSION == GICV2 && gic_is_sgi(interrupt->id)) {
         return false;
     }
@@ -457,6 +469,7 @@ bool vgic_int_update_enable(struct vcpu *vcpu, struct vgic_int *interrupt, bool 
 
 void vgic_int_enable_hw(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
+    UNUSED_ARG(vcpu);
 #if (GIC_VERSION != GICV2)
     if (gic_is_priv(interrupt->id)) {
         gicr_set_enable(interrupt->id, interrupt->enabled,
@@ -487,11 +500,14 @@ bool vgic_int_set_enable(struct vcpu *vcpu, struct vgic_int *interrupt, unsigned
 
 unsigned long vgic_int_get_enable(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
+    UNUSED_ARG(vcpu);
     return (unsigned long)interrupt->enabled;
 }
 
 bool vgic_int_update_pend(struct vcpu *vcpu, struct vgic_int *interrupt, bool pend)
 {
+    UNUSED_ARG(vcpu);
+
     if (GIC_VERSION == GICV2 && gic_is_sgi(interrupt->id)) {
         return false;
     }
@@ -512,6 +528,7 @@ void vgic_int_state_hw(struct vcpu *vcpu, struct vgic_int *interrupt)
     uint8_t state = interrupt->state == PEND ? ACT : interrupt->state;
     bool pend = (state & PEND) != 0;
     bool act = (state & ACT) != 0;
+    UNUSED_ARG(vcpu);
 #if (GIC_VERSION != GICV2)
     if (gic_is_priv(interrupt->id)) {
         gicr_set_act(interrupt->id, act, interrupt->phys.redist);
@@ -544,11 +561,13 @@ bool vgic_int_set_pend(struct vcpu *vcpu, struct vgic_int *interrupt, unsigned l
 
 unsigned long vgic_int_get_pend(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
+    UNUSED_ARG(vcpu);
     return (interrupt->state & PEND) ? 1 : 0;
 }
 
 bool vgic_int_update_act(struct vcpu *vcpu, struct vgic_int *interrupt, bool act)
 {
+    UNUSED_ARG(vcpu);
     if (act ^ !!(interrupt->state & ACT)) {
         if (act)
             interrupt->state |= ACT;
@@ -578,23 +597,27 @@ bool vgic_int_set_act(struct vcpu *vcpu, struct vgic_int *interrupt, unsigned lo
 
 unsigned long vgic_int_get_act(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
+    UNUSED_ARG(vcpu);
     return (interrupt->state & ACT) ? 1 : 0;
 }
 
 bool vgic_int_set_cfg(struct vcpu *vcpu, struct vgic_int *interrupt, unsigned long cfg)
 {
     uint8_t prev_cfg = interrupt->cfg;
+    UNUSED_ARG(vcpu);
     interrupt->cfg = (uint8_t)cfg;
     return prev_cfg != cfg;
 }
 
 unsigned long vgic_int_get_cfg(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
+    UNUSED_ARG(vcpu);
     return (unsigned long)interrupt->cfg;
 }
 
 void vgic_int_set_cfg_hw(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
+    UNUSED_ARG(vcpu);
 #if (GIC_VERSION != GICV2)
     if (gic_is_priv(interrupt->id)) {
         gicr_set_icfgr(interrupt->id, interrupt->cfg, interrupt->phys.redist);
@@ -609,6 +632,7 @@ void vgic_int_set_cfg_hw(struct vcpu *vcpu, struct vgic_int *interrupt)
 bool vgic_int_set_prio(struct vcpu *vcpu, struct vgic_int *interrupt, unsigned long prio)
 {
     uint8_t prev_prio = interrupt->prio;
+    UNUSED_ARG(vcpu);
     interrupt->prio = (uint8_t)prio &
         BIT_MASK(8-GICH_LR_PRIO_LEN, GICH_LR_PRIO_LEN);
     return prev_prio != prio;
@@ -616,11 +640,13 @@ bool vgic_int_set_prio(struct vcpu *vcpu, struct vgic_int *interrupt, unsigned l
 
 unsigned long vgic_int_get_prio(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
+    UNUSED_ARG(vcpu);
     return (unsigned long)interrupt->prio;
 }
 
 void vgic_int_set_prio_hw(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
+    UNUSED_ARG(vcpu);
 #if (GIC_VERSION != GICV2)
     if (gic_is_priv(interrupt->id)) {
         gicr_set_prio(interrupt->id, interrupt->prio, interrupt->phys.redist);
@@ -635,6 +661,9 @@ void vgic_int_set_prio_hw(struct vcpu *vcpu, struct vgic_int *interrupt)
 void vgic_emul_razwi(struct emul_access *acc, struct vgic_reg_handler_info *handlers,
                      bool gicr_access, cpuid_t vgicr_id)
 {
+    UNUSED_ARG(handlers);
+    UNUSED_ARG(gicr_access);
+    UNUSED_ARG(vgicr_id);
     if (!acc->write) vcpu_writereg(cpu()->vcpu, acc->reg, 0);
 }
 
@@ -1084,6 +1113,8 @@ void vgic_handle_trapped_eoir(struct vcpu *vcpu)
 void gic_maintenance_handler(irqid_t irq_id)
 {
     uint32_t misr = gich_get_misr();
+
+    UNUSED_ARG(irq_id);
 
     if (misr & GICH_MISR_EOI) {
         vgic_handle_trapped_eoir(cpu()->vcpu);

@@ -25,6 +25,8 @@ void cache_arch_enumerate(struct cache* dscrp)
 
 __attribute__((weak)) void cache_flush_range(vaddr_t base, size_t size)
 {
+    UNUSED_ARG(base);
+    UNUSED_ARG(size);
     /**
      * A platform must define its custom cache flush operation, otherwise
      * certain mechanisms such as coloring and hypervisor relocation will

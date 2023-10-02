@@ -85,6 +85,8 @@ static inline bool range_in_range(unsigned long base1, unsigned long size1,
 #define __DEFINED(VALUE)  ___DEFINED(VALUE true, false)
 #define ___DEFINED(IGNORE, RESULT, ...)    (RESULT)
 
+#define UNUSED_ARG(VAR) ((void)(VAR))
+
 #endif
 
 #endif /* __UTIL_H__ */

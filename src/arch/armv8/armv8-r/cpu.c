@@ -7,7 +7,8 @@
 #include <arch/gic.h>
 
 void cpu_arch_profile_init(cpuid_t cpuid, paddr_t load_addr) {
-
+    UNUSED_ARG(cpuid);
+    UNUSED_ARG(load_addr);
 }
 
 void cpu_arch_profile_idle() {

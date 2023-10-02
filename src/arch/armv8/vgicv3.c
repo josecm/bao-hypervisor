@@ -66,12 +66,14 @@ bool vgic_int_set_route(struct vcpu *vcpu, struct vgic_int *interrupt,
 
 unsigned long vgic_int_get_route(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
+    UNUSED_ARG(vcpu);
     if (gic_is_priv(interrupt->id)) return 0;
     return interrupt->route;
 }
 
 void vgic_int_set_route_hw(struct vcpu *vcpu, struct vgic_int *interrupt)
 {
+    UNUSED_ARG(vcpu);
     gicd_set_route(interrupt->id, interrupt->phys.route);
 }
 
@@ -79,6 +81,10 @@ void vgicr_emul_ctrl_access(struct emul_access *acc,
                             struct vgic_reg_handler_info *handlers,
                             bool gicr_access, vcpuid_t vgicr_id)
 {
+    UNUSED_ARG(handlers);
+    UNUSED_ARG(gicr_access);
+    UNUSED_ARG(vgicr_id);
+
     if (!acc->write) {
         vcpu_writereg(cpu()->vcpu, acc->reg, 0);
     }
@@ -90,7 +96,10 @@ void vgicr_emul_typer_access(struct emul_access *acc,
 {
     bool word_access = (acc->width == 4);
     bool top_access = word_access && ((acc->addr & 0x4) != 0);
-    
+
+    UNUSED_ARG(handlers);
+    UNUSED_ARG(gicr_access);
+
     if (!acc->write) {
         struct vcpu *vcpu = vm_get_vcpu(cpu()->vcpu->vm, vgicr_id);
         uint64_t typer = vcpu->arch.vgic_priv.vgicr.TYPER;
@@ -109,6 +118,9 @@ void vgicr_emul_pidr_access(struct emul_access *acc,
                             struct vgic_reg_handler_info *handlers,
                             bool gicr_access, vcpuid_t vgicr_id)
 {
+    UNUSED_ARG(handlers);
+    UNUSED_ARG(gicr_access);
+
     if (!acc->write) {
         unsigned long val = 0;
         cpuid_t pgicr_id = vm_translate_to_pcpuid(cpu()->vcpu->vm, vgicr_id);

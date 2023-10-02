@@ -241,6 +241,8 @@ void rv_iommu_fq_irq_handler(irqid_t irq_id)
     // Read ipsr.fip
     uint32_t ipsr = rv_iommu.hw.reg_ptr->ipsr;
 
+    UNUSED_ARG(irq_id);
+
     // Signal error if fip not set
     if (!(ipsr & RV_IOMMU_IPSR_FIP_BIT))
         ERROR("FQ IRQ handler triggered due to non-FQ interrupt");
@@ -502,5 +504,7 @@ inline bool iommu_arch_vm_add_device(struct vm *vm, deviceid_t dev_id)
 bool iommu_arch_vm_init(struct vm *vm, const struct vm_config *config)
 {
     // For now there is no data to initialize
+    UNUSED_ARG(vm);
+    UNUSED_ARG(config);
     return true;
 }

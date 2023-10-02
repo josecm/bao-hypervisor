@@ -36,6 +36,8 @@ void psci_wake_from_off() {
 
 void psci_cpumsg_handler(uint32_t event, uint64_t data){
 
+    UNUSED_ARG(data);
+
     switch(event){
         case PSCI_MSG_ON:
             psci_wake_from_off();
@@ -159,6 +161,9 @@ int32_t psci_affinity_info_handler(unsigned long  target_affinity,
     /**
      * TODO
      */
+
+    UNUSED_ARG(target_affinity);
+    UNUSED_ARG(lowest_affinity_level);
 
     return 0;
 }

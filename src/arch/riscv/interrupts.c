@@ -34,6 +34,7 @@ void interrupts_arch_init()
 
 void interrupts_arch_ipi_send(cpuid_t target_cpu, irqid_t ipi_id)
 {
+    UNUSED_ARG(ipi_id);
     sbi_send_ipi(1ULL << target_cpu, 0);
 }
 

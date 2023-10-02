@@ -206,6 +206,7 @@ CPU_MSG_HANDLER(sbi_msg_handler, SBI_MSG_ID)
 
 void sbi_msg_handler(uint32_t event, uint64_t data)
 {
+    UNUSED_ARG(data); 
     switch (event) {
         case SEND_IPI:
             CSRS(CSR_HVIP, HIP_VSSIP);

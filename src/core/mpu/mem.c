@@ -192,6 +192,8 @@ size_t mem_cpu_boot_alloc_size()
 
 void as_init(struct addr_space *as, enum AS_TYPE type, asid_t id, colormap_t colors)
 {
+    UNUSED_ARG(colors);
+
     as->type = type;
     as->colors = 0;
     as->id = id;
@@ -410,6 +412,8 @@ bool mem_map(struct addr_space *as, struct mp_region *mpr, bool broadcast)
 
 bool mem_unmap_range(struct addr_space *as, vaddr_t vaddr, size_t size, bool broadcast)
 {
+    UNUSED_ARG(broadcast);
+
     spin_lock(&as->lock);
 
     size_t size_left = size;
@@ -482,6 +486,8 @@ vaddr_t mem_map_cpy(struct addr_space *ass, struct addr_space *asd, vaddr_t vas,
     struct mpe *mpe;
     struct mp_region mpr;
     vaddr_t va_res = INVALID_VA;
+
+    UNUSED_ARG(num_pages);
 
     if ((ass != asd) && (vad == INVALID_VA || vad == vas)) {
         // In mpu-based systems, we can only copy mappings between address
