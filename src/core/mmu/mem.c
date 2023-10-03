@@ -151,7 +151,7 @@ bool pp_alloc_clr(struct page_pool *pool, size_t n, colormap_t colors,
              */
             ppages->num_pages = n;
             ppages->base = pool->base + (first_index * PAGE_SIZE);
-            for (size_t i = 0; i < n; i++) {
+            for (size_t j = 0; j < n; j++) {
                 first_index = pp_next_clr(pool->base, first_index, colors);
                 bitmap_set(pool->bitmap, first_index++);
             }
@@ -397,7 +397,7 @@ vaddr_t mem_alloc_vpage(struct addr_space *as, enum AS_SEC section,
     if (vpage != INVALID_VA && !failed) {
         count = 0;
         addr = vpage;
-        size_t lvl = 0;
+        lvl = 0;
         while (count < n) {
             for (lvl = 0; lvl < as->pt.dscr->lvls; lvl++) {
                 pte = pt_get_pte(&as->pt, lvl, addr);
