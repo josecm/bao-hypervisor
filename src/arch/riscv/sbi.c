@@ -50,14 +50,14 @@ static inline struct sbiret sbi_ecall(unsigned long eid, unsigned long fid,
     unsigned long a0, unsigned long a1, unsigned long a2, unsigned long a3, 
     unsigned long a4, unsigned long a5)
 {
-    unsigned long register _a0 __asm__("a0") = a0;
-    unsigned long register _a1 __asm__("a1") = a1;
-    unsigned long register _a2 __asm__("a2") = a2;
-    unsigned long register _a3 __asm__("a3") = a3;
-    unsigned long register _a4 __asm__("a4") = a4;
-    unsigned long register _a5 __asm__("a5") = a5;
-    unsigned long register _a6 __asm__("a6") = fid;
-    unsigned long register _a7 __asm__("a7") = eid;
+    register unsigned long _a0 __asm__("a0") = a0;
+    register unsigned long _a1 __asm__("a1") = a1;
+    register unsigned long _a2 __asm__("a2") = a2;
+    register unsigned long _a3 __asm__("a3") = a3;
+    register unsigned long _a4 __asm__("a4") = a4;
+    register unsigned long _a5 __asm__("a5") = a5;
+    register unsigned long _a6 __asm__("a6") = fid;
+    register unsigned long _a7 __asm__("a7") = eid;
 
     __asm__ volatile("ecall"
                  : "+r"(_a0), "+r"(_a1)
