@@ -211,15 +211,15 @@
 /* PAR -  Physical Address Register */
 
 #define PAR_ATTR_OFF (56)
-#define PAR_ATTR_MSK (0xffUL << PAR_ATTR_OFF)
+#define PAR_ATTR_MSK (0xffULL << PAR_ATTR_OFF)
 #define PAR_PA_OFF (12)
-#define PAR_PA_MSK (0x3ffffffUL << PAR_PA_OFF)
-#define PAR_RES1 (0x1UL << 11)
-#define PAR_IMPDEF (0x1UL << 10)
-#define PAR_NS (0x1UL << 9)
+#define PAR_PA_MSK (0x3ffffffULL << PAR_PA_OFF)
+#define PAR_RES1 (0x1ULL << 11)
+#define PAR_IMPDEF (0x1ULL << 10)
+#define PAR_NS (0x1ULL << 9)
 #define PAR_SH_OFF (7)
-#define PAR_SH_MSK (0x3UL << PAR_SH_OFF)
-#define PAR_F (0x1UL << 0)
+#define PAR_SH_MSK (0x3ULL << PAR_SH_OFF)
+#define PAR_F (0x1ULL << 0)
 
 /* SCTLR - System Control Register */
 
@@ -509,7 +509,7 @@
 #define PRBAR_BASE_MSK          (~PRBAR_FLAGS_MSK)
 #define PRBAR_BASE(BASE)        ((BASE) & PRBAR_BASE_MSK)
 #define PRBAR_MEM_ATTR_FLAGS_MSK   ((0x18UL) << PRBAR_ADJUST_SHIFT)
-#define PRBAR_PERMS_FLAGS_MSK   ((1 << PRCBR_SH_OFF) - 1)
+#define PRBAR_PERMS_FLAGS_MSK   ((1U << PRCBR_SH_OFF) - 1)
 
 #define PRLAR_EN            (0x1UL)
 #define PRLAR_ATTR_OFF      (1)

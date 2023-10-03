@@ -26,7 +26,7 @@
 
 struct iommu_vm_arch {
     streamid_t global_mask;
-    size_t ctx_id;
+    ssize_t ctx_id;
 };
 
 #endif

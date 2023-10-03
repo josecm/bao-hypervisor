@@ -47,7 +47,7 @@ bool mem_translate(struct addr_space* as, vaddr_t va, paddr_t* pa)
         return false;
     } else {
         if (pa != NULL)
-            *pa = (par & PAR_PA_MSK) | (va & (PAGE_SIZE - 1));
+            *pa = (paddr_t)((par & PAR_PA_MSK) | (va & (PAGE_SIZE - 1)));
         return true;
     }
 }

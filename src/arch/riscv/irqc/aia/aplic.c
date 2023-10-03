@@ -59,7 +59,7 @@ void aplic_init(void)
 }
 
 void aplic_idc_init(void){
-    uint32_t idc_index = cpu()->id;
+    size_t idc_index = cpu()->id;
     aplic_idc[idc_index].ithreshold = APLIC_IDC_ITHRESHOLD_EN_ALL;  
     aplic_idc[idc_index].iforce = APLIC_DISABLE_IFORCE;
     aplic_idc[idc_index].idelivery = APLIC_ENABLE_IDELIVERY;
@@ -150,7 +150,8 @@ void aplic_set_target_hart(irqid_t intp_id, cpuid_t hart)
 {
     aplic_control->target[intp_id - 1] &= ~(APLIC_TARGET_HART_IDX_MASK << 
                                            APLIC_TARGET_HART_IDX_SHIFT);
-    aplic_control->target[intp_id - 1] |= hart << APLIC_TARGET_HART_IDX_SHIFT;
+    aplic_control->target[intp_id - 1] |=
+        (uint32_t)(hart << APLIC_TARGET_HART_IDX_SHIFT);
 }
 
 uint8_t aplic_get_target_prio(irqid_t intp_id)

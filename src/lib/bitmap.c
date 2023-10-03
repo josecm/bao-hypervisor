@@ -13,9 +13,9 @@ ssize_t bitmap_find_nth(bitmap_t* map, size_t size, size_t nth, size_t start,
     size_t count = 0;
     unsigned bit = set ? 1 : 0;
 
-    for (ssize_t i = start; i < size; i++) {
+    for (size_t i = start; i < size; i++) {
         if (bitmap_get(map, i) == bit) {
-            if (++count == nth) return i;
+            if (++count == nth) return (ssize_t)i;
         }
     }
 
@@ -41,7 +41,7 @@ size_t bitmap_count_consecutive(bitmap_t* map, size_t size, size_t start,
         pos += first_word_bits;
     }
 
-    mask = set ? ~0 : 0;
+    mask = set ? ~0U : 0U;
     while ((pos < size) && !(map[pos/BITMAP_GRANULE_LEN] ^ mask) && (count < n)) {
         count += BITMAP_GRANULE_LEN;
         pos += BITMAP_GRANULE_LEN;
@@ -64,19 +64,19 @@ ssize_t bitmap_find_consec(bitmap_t* map, size_t size, size_t start, size_t n,
     // find first set
     if ((i = bitmap_find_nth(map, size, 1, start, set)) < 0) return -1;
 
-    while (i < size) {
+    while (i < ((ssize_t)size)) {
         // find the last (with n as maximum) contiguous set page
-        count = bitmap_count_consecutive(map, size, i, n);
-        if (count < n) {  // if didn't found enough n contiguous set pages
+        count = (ssize_t)bitmap_count_consecutive(map, size, (size_t)i, n);
+        if (count < (ssize_t)n) {  // if didn't found enough n contiguous set pages
             i += count;
             // find the last contiguous ~set page
-            i += bitmap_count_consecutive(map, size, i, -1);
+            i += (ssize_t)bitmap_count_consecutive(map, size, (size_t)i, SIZE_MAX);
         } else {
             break;
         }
     }
 
-    if (i >= size) i = -1;
+    if (i >= ((ssize_t)size)) i = -1;
 
     return i;
 }
@@ -93,7 +93,7 @@ void bitmap_set_consecutive(bitmap_t* map, size_t start, size_t n)
     count -= first_word_bits;
 
     while (count >= BITMAP_GRANULE_LEN) {
-        map[pos/BITMAP_GRANULE_LEN] |= ~0;
+        map[pos/BITMAP_GRANULE_LEN] |= ~((bitmap_granule_t)0);
         pos += BITMAP_GRANULE_LEN;
         count -= BITMAP_GRANULE_LEN;
     }

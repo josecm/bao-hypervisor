@@ -21,10 +21,10 @@ struct vgic_int {
     node_t node;
     struct vcpu *owner;
 #if (GIC_VERSION != GICV2)
-    unsigned long route;
+    uint64_t route;
     union {
         vcpuid_t redist;
-        unsigned long route;
+        uint64_t route;
     } phys;
 #endif
     spinlock_t lock;

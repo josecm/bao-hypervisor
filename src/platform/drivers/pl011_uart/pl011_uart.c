@@ -108,7 +108,7 @@ void uart_putc(volatile struct Pl011_Uart_hw * ptr_uart,int8_t c){
 	//wait until txFIFO is not full
 	while(ptr_uart->flag & UART_FR_TXFF);
 
-	ptr_uart->data = c;
+	ptr_uart->data = (uint32_t)c;
 
 }
 
@@ -117,7 +117,7 @@ void uart_puts(volatile struct Pl011_Uart_hw * ptr_uart,const char *s){
 
 	while (*s)
 	{
-		uart_putc(ptr_uart,*s++);
+		uart_putc(ptr_uart, (int8_t)*s++);
 	}
 
 }

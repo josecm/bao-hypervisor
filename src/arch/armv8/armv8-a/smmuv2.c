@@ -135,7 +135,7 @@ void smmu_init()
     size_t pg_size =
         smmu.hw.glbl_rs0->IDR1 & SMMUV2_IDR1_PAGESIZE_BIT ? 0x10000 : 0x1000;
     size_t num_page =
-        1ULL << (bit32_extract(smmu.hw.glbl_rs0->IDR1, SMMUV2_IDR1_NUMPAGEDXB_OFF,
+        1UL << (bit32_extract(smmu.hw.glbl_rs0->IDR1, SMMUV2_IDR1_NUMPAGEDXB_OFF,
                              SMMUV2_IDR1_NUMPAGEDXB_LEN) +
                  1);
     size_t ctx_bank_num = bit32_extract(
@@ -174,7 +174,7 @@ void smmu_init()
 
     for (size_t i = 0; i < smmu.ctx_num; i++) {
         smmu.hw.cntxt[i].SCTLR = 0;
-        smmu.hw.cntxt[i].FSR = -1;
+        smmu.hw.cntxt[i].FSR = ~0U;
     }
 
     /* Enable IOMMU. */
@@ -191,7 +191,7 @@ ssize_t smmu_alloc_ctxbnk()
     /* Find a free context bank. */
     ssize_t nth = bitmap_find_nth(smmu.ctxbank_bitmap, smmu.ctx_num, 1, 0, false);
     if (nth >= 0) {
-        bitmap_set(smmu.ctxbank_bitmap, nth);
+        bitmap_set(smmu.ctxbank_bitmap, (size_t)nth);
     }
     spin_unlock(&smmu.ctx_lock);
 
@@ -259,7 +259,7 @@ ssize_t smmu_alloc_sme()
     /* Find a free sme. */
     ssize_t nth = bitmap_find_nth(smmu.sme_bitmap, smmu.sme_num, 1, 0, false);
     if(nth >= 0) {
-        bitmap_set(smmu.sme_bitmap, nth);
+        bitmap_set(smmu.sme_bitmap, (size_t)nth);
     }
     spin_unlock(&smmu.sme_lock);
 

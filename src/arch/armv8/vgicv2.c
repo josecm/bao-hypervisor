@@ -59,7 +59,7 @@ static void vgicd_emul_sgiregs_access(struct emul_access *acc,
                                struct vgic_reg_handler_info *handlers,
                                bool gicr_access, vcpuid_t vgicr_id)
 {
-    unsigned long val = acc->write ? vcpu_readreg(cpu()->vcpu, acc->reg) : 0;
+    uint32_t val = acc->write ? (uint32_t)vcpu_readreg(cpu()->vcpu, acc->reg) : 0;
 
     UNUSED_ARG(handlers);
     UNUSED_ARG(gicr_access);
@@ -116,14 +116,14 @@ void vgic_inject_sgi(struct vcpu *vcpu, struct vgic_int *interrupt, vcpuid_t sou
     vgic_remove_lr(vcpu, interrupt);
 
     uint8_t pendstate = interrupt->sgi.pend;
-    uint8_t new_pendstate = pendstate | (1U << source);
+    uint8_t new_pendstate = pendstate | (uint8_t)(1U << source);
 
     if (pendstate ^ new_pendstate) {
         interrupt->sgi.pend = new_pendstate;
         if (new_pendstate) {
             interrupt->state |= PEND;
         } else {
-            interrupt->state &= ~PEND;
+            interrupt->state &= (uint8_t)~PEND;
         }
 
         if (interrupt->state != INV) {
@@ -155,7 +155,7 @@ void vgic_init(struct vm *vm, const struct vgic_dscrp *vgic_dscrp)
         ERROR("failed to alloc vgic");
     }
 
-    for (size_t i = 0; i < vm->arch.vgicd.int_num; i++) {
+    for (irqid_t i = 0; i < vm->arch.vgicd.int_num; i++) {
         vm->arch.vgicd.interrupts[i].owner = NULL;
         vm->arch.vgicd.interrupts[i].lock = SPINLOCK_INITVAL;
         vm->arch.vgicd.interrupts[i].id = i + GIC_CPU_PRIV;
@@ -181,7 +181,7 @@ void vgic_init(struct vm *vm, const struct vgic_dscrp *vgic_dscrp)
 
 void vgic_cpu_init(struct vcpu *vcpu)
 {
-    for (size_t i = 0; i < GIC_CPU_PRIV; i++) {
+    for (irqid_t i = 0; i < GIC_CPU_PRIV; i++) {
         vcpu->arch.vgic_priv.interrupts[i].owner = vcpu;
         vcpu->arch.vgic_priv.interrupts[i].lock = SPINLOCK_INITVAL;
         vcpu->arch.vgic_priv.interrupts[i].id = i;
@@ -195,7 +195,7 @@ void vgic_cpu_init(struct vcpu *vcpu)
         vcpu->arch.vgic_priv.interrupts[i].enabled = false;
     }
 
-    for (size_t i = 0; i < GIC_MAX_SGIS; i++) {
+    for (irqid_t i = 0; i < GIC_MAX_SGIS; i++) {
         vcpu->arch.vgic_priv.interrupts[i].enabled = true;
     }
 

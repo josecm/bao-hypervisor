@@ -48,16 +48,16 @@ static size_t vsprintk(char *buf, const char *fmt, va_list args)
                     bool keep_zeros = false;
 
                     for (i = 0; i < length; i++) {
-                        byte = number >> (length_in_bits - ((i + 1) * 4));
+                        byte = (uint8_t)(number >> (length_in_bits - ((i + 1) * 4)));
                         byte = byte & 0xF;
                         if (byte != 0 || i == length-1) {
                             keep_zeros = true;
                         }
                         if (keep_zeros || zero_padding) {
                             if ((byte >= 0) && (byte <= 9)) {
-                                byte += 0x30;
+                                byte = (uint8_t)(byte + 0x30);
                             } else {
-                                byte += (0x61-0xa);
+                                byte = (uint8_t)(byte + (0x61U-0xaU));
                             }
                             *str++ = byte;
                         }
@@ -79,7 +79,7 @@ static size_t vsprintk(char *buf, const char *fmt, va_list args)
                             *str++ = 0x2d;
                             number_signed = -(number_signed);
                         }
-                        number = number_signed;
+                        number = (size_t)number_signed;
                     } else {
                         number = is_long ? va_arg(args, unsigned long) : va_arg(args, unsigned);
                     }
@@ -96,7 +96,7 @@ static size_t vsprintk(char *buf, const char *fmt, va_list args)
                         if (sw_quotient_value != 0) keep_zeros = true;
                         if (keep_zeros || zero_padding) {
                             sw_quotient_value += 0x30;
-                            *str++ = sw_quotient_value;
+                            *str++ = (char)sw_quotient_value;
                         }
                         j = i;
                         while (j < (max_num_zeros - 1)) {
@@ -107,7 +107,7 @@ static size_t vsprintk(char *buf, const char *fmt, va_list args)
                         divisor_value_uint64_t = new_div_val;
                         new_div_val = 1;
                     }
-                    *str++ = (number + 0x30);
+                    *str++ = (char)(number + 0x30);
                     break;
                 }
                 case 's': {
@@ -119,7 +119,7 @@ static size_t vsprintk(char *buf, const char *fmt, va_list args)
                     break;
                 }
                 case 'c': {
-                    char character = va_arg(args, int);
+                    char character = (char)va_arg(args, int);
                     *str++ = character;
                     break;
                 }

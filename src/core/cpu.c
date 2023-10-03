@@ -26,7 +26,7 @@ struct cpu_synctoken cpu_glb_sync = {.ready = false};
 
 extern cpu_msg_handler_t ipi_cpumsg_handlers[];
 extern uint8_t _ipi_cpumsg_handlers_size;
-extern size_t _ipi_cpumsg_handlers_id_start[];
+extern uint32_t _ipi_cpumsg_handlers_id_start[];
 size_t ipi_cpumsg_handler_num;
 
 struct cpuif cpu_interfaces[PLAT_CPU_NUM];
@@ -47,7 +47,7 @@ void cpu_init(cpuid_t cpu_id, paddr_t load_addr)
         ipi_cpumsg_handler_num =
             ((size_t)&_ipi_cpumsg_handlers_size) / sizeof(cpu_msg_handler_t);
         for (size_t i = 0; i < ipi_cpumsg_handler_num; i++) {
-            ((size_t*)_ipi_cpumsg_handlers_id_start)[i] = i;
+            ((uint32_t*)_ipi_cpumsg_handlers_id_start)[i] = (uint32_t)i;
         }
     }
 

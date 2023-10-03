@@ -85,7 +85,7 @@ static size_t guest_page_fault_handler()
     emul_handler_t handler = vm_emul_get_mem(cpu()->vcpu->vm, addr);
     if (handler != NULL) {
 
-        unsigned long ins = CSRR(CSR_HTINST);
+        uint32_t ins = (uint32_t)CSRR(CSR_HTINST);
         size_t ins_size;
         if(ins == 0) {
             /**

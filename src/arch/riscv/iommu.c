@@ -211,8 +211,8 @@ struct riscv_iommu_priv rv_iommu;
  */
 static void rv_iommu_check_features(void)
 {
-    unsigned long long caps = rv_iommu.hw.reg_ptr->caps;
-    unsigned version = bit64_extract(caps,
+    uint64_t caps = rv_iommu.hw.reg_ptr->caps;
+    uint64_t version = bit64_extract(caps,
                             RV_IOMMU_CAPS_VERSION_OFF, RV_IOMMU_CAPS_VERSION_LEN);
 
     if (version != RV_IOMMU_SUPPORTED_VERSION) {
@@ -227,7 +227,7 @@ static void rv_iommu_check_features(void)
         WARNING("RISC-V IOMMU HW does not support MSI Address Translation (basic-translate mode)");
     }
 
-    unsigned igs = bit64_extract(caps, RV_IOMMU_CAPS_IGS_OFF, RV_IOMMU_CAPS_IGS_LEN);
+    uint64_t igs = bit64_extract(caps, RV_IOMMU_CAPS_IGS_OFF, RV_IOMMU_CAPS_IGS_LEN);
     if ((!igs)) {
         ERROR("RISC-V IOMMU HW does not support WSI generation");
     }
