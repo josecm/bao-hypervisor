@@ -87,6 +87,9 @@ static inline bool range_in_range(unsigned long base1, unsigned long size1,
 
 #define UNUSED_ARG(VAR) ((void)(VAR))
 
+#define EMPTY_STRUCT_FIELDS \
+    uint8_t dummy_;
+
 #endif
 
 #endif /* __UTIL_H__ */
