@@ -107,6 +107,7 @@ struct vgic_reg_handler_info itargetr_info = {
 struct vgic_reg_handler_info sgir_info = {
     vgicd_emul_sgiregs_access,
     0b0100,
+    VGIC_REG_HANDLER_INFO_DEFAULT_FIELDS
 };
 
 void vgic_inject_sgi(struct vcpu *vcpu, struct vgic_int *interrupt, vcpuid_t source)

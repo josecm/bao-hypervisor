@@ -229,7 +229,9 @@ void sbi_msg_handler(uint32_t event, uint64_t data)
 
 static struct sbiret sbi_time_handler(unsigned long fid)
 {
-    if (fid != SBI_SET_TIMER_FID) return (struct sbiret){SBI_ERR_NOT_SUPPORTED};
+    if (fid != SBI_SET_TIMER_FID) {
+        return (struct sbiret){SBI_ERR_NOT_SUPPORTED, 0};
+    }
 
     uint64_t stime_value = vcpu_readreg(cpu()->vcpu, REG_A0);
     if(CPU_HAS_EXTENSION(CPU_EXT_SSTC)) {
@@ -251,7 +253,9 @@ static void sbi_timer_irq_handler()
 
 static struct sbiret sbi_ipi_handler(unsigned long fid)
 {
-    if (fid != SBI_SEND_IPI_FID) return (struct sbiret){SBI_ERR_NOT_SUPPORTED};
+    if (fid != SBI_SEND_IPI_FID) {
+        return (struct sbiret){SBI_ERR_NOT_SUPPORTED, 0};
+    }
 
     unsigned long hart_mask = vcpu_readreg(cpu()->vcpu, REG_A0);
     unsigned long hart_mask_base = vcpu_readreg(cpu()->vcpu, REG_A1);
@@ -314,7 +318,7 @@ static struct sbiret sbi_rfence_handler(unsigned long fid)
         ((hart_mask >> hart_mask_base) != 0))) 
     {
         WARNING("sbi invalid hart_mask");
-        return (struct sbiret){SBI_ERR_INVALID_PARAM};
+        return (struct sbiret){SBI_ERR_INVALID_PARAM, 0};
     }
 
     hart_mask = hart_mask >> hart_mask_base;

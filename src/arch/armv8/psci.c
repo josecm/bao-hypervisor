@@ -132,7 +132,7 @@ static int32_t psci_cpu_on_handler(unsigned long target_cpu, unsigned long entry
         if (pcpuid == INVALID_CPUID) {
             ret = PSCI_E_INVALID_PARAMS;
         } else {
-            struct cpu_msg msg = {PSCI_CPUMSG_ID, PSCI_MSG_ON};
+            struct cpu_msg msg = {PSCI_CPUMSG_ID, PSCI_MSG_ON, 0};
             cpu_send_msg(pcpuid, &msg);
             ret = PSCI_E_SUCCESS;
         }

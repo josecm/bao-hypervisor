@@ -105,6 +105,14 @@ struct vgic_reg_handler_info {
     void (*update_hw)(struct vcpu *, struct vgic_int *);
 };
 
+#define VGIC_REG_HANDLER_INFO_DEFAULT_FIELDS \
+    .regid = 0,\
+    .regroup_base = 0,\
+    .field_width = 0,\
+    .read_files = NULL,\
+    .update_field = NULL,\
+    .update_hw = NULL
+
 /* interface for version agnostic vgic */
 bool vgicd_emul_handler(struct emul_access *);
 bool vgic_check_reg_alignment(struct emul_access *acc,
