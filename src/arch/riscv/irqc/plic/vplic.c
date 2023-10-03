@@ -120,9 +120,9 @@ static void vplic_update_hart_line(struct vcpu* vcpu, size_t vcntxt)
     if(pcntxt.hart_id == cpu()->id) {
         irqid_t id = vplic_next_pending(vcpu, vcntxt);
         if(id != 0){
-            CSRS(CSR_HVIP, HIP_VSEIP);
+            csrs_hvip_set(HIP_VSEIP);
         } else  {
-            CSRC(CSR_HVIP, HIP_VSEIP);
+            csrs_hvip_clear(HIP_VSEIP);
         }
     } else {
         struct cpu_msg msg = {VPLIC_IPI_ID, UPDATE_HART_LINE, vcntxt};
