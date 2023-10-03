@@ -435,6 +435,9 @@ static void vgicd_emul_misc_access(struct emul_access *acc,
                 vcpu_writereg(cpu()->vcpu, acc->reg, vgicd->IIDR);
             }
             break;
+        default:
+            vgic_emul_razwi(acc, handlers, gicr_access, vgicr_id);
+            break;
     }
 }
 
@@ -1004,6 +1007,10 @@ void vgic_ipi_handler(uint32_t event, uint64_t data)
                 vgic_int_set_field(handlers, cpu()->vcpu, interrupt, val);
             }
         } break;
+
+        default:
+            WARNING("Unknown VGIC IPI event");
+            break;
     }
 }
 

@@ -42,6 +42,9 @@ static void psci_cpumsg_handler(uint32_t event, uint64_t data){
         case PSCI_MSG_ON:
             psci_wake_from_off();
         break;
+        default:
+            WARNING("Unknown PSCI IPI event");
+            break;
     }
 }
 
@@ -170,7 +173,7 @@ static int32_t psci_affinity_info_handler(unsigned long  target_affinity,
 
 static int32_t psci_features_handler(uint32_t feature_id){
 
-    int32_t ret = PSCI_E_NOT_SUPPORTED;
+    int32_t ret;
 
     switch (feature_id) {
         case PSCI_VERSION:
@@ -183,6 +186,9 @@ static int32_t psci_features_handler(uint32_t feature_id){
         case PSCI_AFFINITY_INFO_SMC64:
         case PSCI_FEATURES:
             ret = PSCI_E_SUCCESS;
+            break;
+        default:
+            ret = PSCI_E_NOT_SUPPORTED;
             break;
     }    
 
