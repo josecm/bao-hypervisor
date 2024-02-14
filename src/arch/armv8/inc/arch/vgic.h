@@ -59,6 +59,28 @@ struct vgicd {
     uint32_t IIDR;
 };
 
+struct vgic {
+    struct vgicd vgicd;
+
+    vaddr_t vgicr_addr;
+
+    struct list spilled;
+    spinlock_t spilled_lock;
+
+    struct emul_mem vgicd_emul;
+    struct emul_mem vgicr_emul;
+    struct emul_reg icc_sgir_emul;
+    struct emul_reg icc_sre_emul;
+};
+
+struct gich_state {
+    gic_lr_t lrs[GICH_MAX_NUM_LRS];
+    uint64_t elrsr;
+    uint32_t hcr;
+    uint32_t vmcr;
+    uint32_t ap1r[GICH_APR_NUM];
+};
+
 struct vgicr {
     spinlock_t lock;
     uint64_t TYPER;
@@ -70,8 +92,10 @@ struct vgic_priv {
 #if (GIC_VERSION != GICV2)
     struct vgicr vgicr;
 #endif
-    irqid_t curr_lrs[GIC_NUM_LIST_REGS];
+    irqid_t curr_lrs[GICH_MAX_NUM_LRS];
     struct vgic_int interrupts[GIC_CPU_PRIV];
+    struct list spilled;
+    struct gich_state gich;
 };
 
 void vgic_init(struct vm* vm, const struct vgic_dscrp* vgic_dscrp);
@@ -97,8 +121,8 @@ enum vgic_reg_handler_info_id {
 };
 
 struct vgic_reg_handler_info {
-    void (*reg_access)(struct emul_access*, struct vgic_reg_handler_info*, bool gicr_accces,
-        cpuid_t vgicr_id);
+    void (*reg_access)(struct vcpu*, struct emul_access*, struct vgic_reg_handler_info*,
+        bool gicr_accces, cpuid_t vgicr_id);
     size_t alignment;
     size_t regid;
     vaddr_t regroup_base;
@@ -109,20 +133,22 @@ struct vgic_reg_handler_info {
 };
 
 /* interface for version agnostic vgic */
-bool vgicd_emul_handler(struct emul_access*);
+bool vgicd_emul_handler(struct vcpu*, struct emul_access*);
 bool vgic_check_reg_alignment(struct emul_access* acc, struct vgic_reg_handler_info* handlers);
 bool vgic_add_lr(struct vcpu* vcpu, struct vgic_int* interrupt);
 bool vgic_remove_lr(struct vcpu* vcpu, struct vgic_int* interrupt);
 bool vgic_get_ownership(struct vcpu* vcpu, struct vgic_int* interrupt);
 void vgic_yield_ownership(struct vcpu* vcpu, struct vgic_int* interrupt);
-void vgic_emul_generic_access(struct emul_access*, struct vgic_reg_handler_info*, bool, vcpuid_t);
+void vgic_emul_generic_access(struct vcpu* vcpu, struct emul_access*, struct vgic_reg_handler_info*, bool, vcpuid_t);
 void vgic_send_sgi_msg(struct vcpu* vcpu, cpumap_t pcpu_mask, irqid_t int_id);
 size_t vgic_get_itln(const struct vgic_dscrp* vgic_dscrp);
 struct vgic_int* vgic_get_int(struct vcpu* vcpu, irqid_t int_id, vcpuid_t vgicr_id);
 void vgic_int_set_field(struct vgic_reg_handler_info* handlers, struct vcpu* vcpu,
     struct vgic_int* interrupt, unsigned long data);
-void vgic_emul_razwi(struct emul_access* acc, struct vgic_reg_handler_info* handlers,
+void vgic_emul_razwi(struct vcpu* vcpu, struct emul_access* acc, struct vgic_reg_handler_info* handlers,
     bool gicr_access, cpuid_t vgicr_id);
+void vgic_save_state(struct vcpu* vcpu);
+void vgic_restore_state(struct vcpu* vcpu);
 
 /* interface for version specific vgic */
 bool vgic_int_has_other_target(struct vcpu* vcpu, struct vgic_int* interrupt);

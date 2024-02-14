@@ -113,6 +113,12 @@ SYSREG_GEN_ACCESSORS(icc_ctlr_el1, 0, c12, c12, 4)
 SYSREG_GEN_ACCESSORS(icc_igrpen1_el1, 0, c12, c12, 7)
 SYSREG_GEN_ACCESSORS(ich_hcr_el2, 4, c12, c11, 0)
 SYSREG_GEN_ACCESSORS_64(icc_sgi1r_el1, 0, c12)
+SYSREG_GEN_ACCESSORS(ich_ap1r0_el2, 0, c12, c9, 0)
+SYSREG_GEN_ACCESSORS(ich_ap1r1_el2, 0, c12, c9, 1)
+SYSREG_GEN_ACCESSORS(ich_ap1r2_el2, 0, c12, c9, 2)
+SYSREG_GEN_ACCESSORS(ich_ap1r3_el2, 0, c12, c9, 3)
+SYSREG_GEN_ACCESSORS(ich_vmcr_el2, 4, c12, c11, 7)
+
 
 SYSREG_GEN_ACCESSORS(vsctlr_el2, 4, c2, c0, 0)
 SYSREG_GEN_ACCESSORS(sctlr_el2, 4, c1, c0, 0)

@@ -18,8 +18,6 @@ volatile struct gicr_hw* gicr;
 static spinlock_t gicd_lock = SPINLOCK_INITVAL;
 static spinlock_t gicr_lock = SPINLOCK_INITVAL;
 
-size_t NUM_LRS;
-
 size_t gich_num_lrs(void)
 {
     return ((sysreg_ich_vtr_el2_read() & ICH_VTR_MSK) >> ICH_VTR_OFF) + 1;

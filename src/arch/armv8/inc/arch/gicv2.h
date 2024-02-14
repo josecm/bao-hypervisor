@@ -10,7 +10,7 @@
 
 static inline uint64_t gich_read_lr(size_t i)
 {
-    if (i < NUM_LRS) {
+    if (i < GIC_NUM_LRS) {
         return gich->LR[i];
     } else {
         ERROR("gic: trying to read inexistent list register");
@@ -19,7 +19,7 @@ static inline uint64_t gich_read_lr(size_t i)
 
 static inline void gich_write_lr(size_t i, uint64_t val)
 {
-    if (i < NUM_LRS) {
+    if (i < GIC_NUM_LRS) {
         gich->LR[i] = (gic_lr_t)val;
     } else {
         ERROR("gic: trying to write inexistent list register");
@@ -44,7 +44,7 @@ static inline uint32_t gich_get_misr(void)
 static inline uint64_t gich_get_eisr(void)
 {
     uint64_t eisr = gich->EISR[0];
-    if (NUM_LRS > 32) {
+    if (GIC_NUM_LRS > 32) {
         eisr |= ((uint64_t)gich->EISR[1] << 32);
     }
     return eisr;
@@ -53,11 +53,32 @@ static inline uint64_t gich_get_eisr(void)
 static inline uint64_t gich_get_elrsr(void)
 {
     uint64_t elsr = gich->ELSR[0];
-    if (NUM_LRS > 32) {
+    if (GIC_NUM_LRS > 32) {
         elsr |= ((uint64_t)gich->ELSR[1] << 32);
     }
     return elsr;
 }
+
+static inline uint32_t gich_get_ap1r(size_t index)
+{
+    return gich->APR;
+}
+
+static inline void gich_set_ap1r(size_t index, uint32_t ap1r)
+{
+    gich->APR = ap1r;
+}
+
+static inline uint32_t gich_get_vmcr(void)
+{
+    return gich->VMCR;
+}
+
+static inline void gich_set_vmcr(uint32_t vmcr)
+{
+    gich->VMCR = vmcr;
+}
+
 
 static inline uint32_t gicc_iar(void)
 {

@@ -36,20 +36,12 @@ struct arch_vm_platform {
 };
 
 struct vm_arch {
-    struct vgicd vgicd;
-    vaddr_t vgicr_addr;
-    struct list vgic_spilled;
-    spinlock_t vgic_spilled_lock;
-    struct emul_mem vgicd_emul;
-    struct emul_mem vgicr_emul;
-    struct emul_reg icc_sgir_emul;
-    struct emul_reg icc_sre_emul;
+    struct vgic vgic;
 };
 
 struct vcpu_arch {
     unsigned long vmpidr;
     struct vgic_priv vgic_priv;
-    struct list vgic_spilled;
     struct psci_ctx psci_ctx;
 
 #ifdef MEM_PROT_MPU

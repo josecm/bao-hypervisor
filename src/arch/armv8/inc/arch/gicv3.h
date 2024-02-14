@@ -10,7 +10,7 @@
 
 static inline uint64_t gich_read_lr(size_t i)
 {
-    if (i >= NUM_LRS) {
+    if (i >= GIC_NUM_LRS) {
         ERROR("gic: trying to read inexistent list register");
     }
 
@@ -54,7 +54,7 @@ static inline uint64_t gich_read_lr(size_t i)
 
 static inline void gich_write_lr(size_t i, uint64_t val)
 {
-    if (i >= NUM_LRS) {
+    if (i >= GIC_NUM_LRS) {
         ERROR("gic: trying to write inexistent list register");
     }
 
@@ -135,6 +135,52 @@ static inline uint64_t gich_get_eisr(void)
 static inline uint64_t gich_get_elrsr(void)
 {
     return sysreg_ich_elrsr_el2_read();
+}
+
+static inline uint32_t gich_get_ap1r(size_t index)
+{
+    switch (index) {
+        case 0:
+            return (uint32_t)sysreg_ich_ap1r0_el2_read();
+        case 1:
+            return (uint32_t)sysreg_ich_ap1r1_el2_read();
+        case 2:
+            return (uint32_t)sysreg_ich_ap1r2_el2_read();
+        case 3:
+            return (uint32_t)sysreg_ich_ap1r3_el2_read();
+        default:
+            return 0;
+    }
+}
+
+static inline void gich_set_ap1r(size_t index, uint32_t ap1r)
+{
+    switch (index) {
+        case 0:
+            sysreg_ich_ap1r0_el2_write(ap1r);
+            break;
+        case 1:
+            sysreg_ich_ap1r1_el2_write(ap1r);
+            break;
+        case 2:
+            sysreg_ich_ap1r2_el2_write(ap1r);
+            break;
+        case 3:
+            sysreg_ich_ap1r3_el2_write(ap1r);
+            break;
+        default:
+            break;
+    }
+}
+
+static inline uint32_t gich_get_vmcr(void)
+{
+    return (uint32_t)sysreg_ich_vmcr_el2_read();
+}
+
+static inline void gich_set_vmcr(uint32_t vmcr)
+{
+    sysreg_ich_vmcr_el2_write(vmcr);
 }
 
 static inline uint32_t gicc_iar(void)
