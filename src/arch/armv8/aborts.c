@@ -60,12 +60,9 @@ static long int standard_service_call(unsigned long _fn_num)
     long int ret = -1;
 
     unsigned long smc_fid = vcpu_readreg(cpu()->vcpu, 0);
-    unsigned long x1 = vcpu_readreg(cpu()->vcpu, 1);
-    unsigned long x2 = vcpu_readreg(cpu()->vcpu, 2);
-    unsigned long x3 = vcpu_readreg(cpu()->vcpu, 3);
 
     if (is_psci_fid(smc_fid)) {
-        ret = psci_smc_handler((uint32_t)smc_fid, x1, x2, x3);
+        ret = psci_smc_handler(cpu()->vcpu);
     } else {
         INFO("unknown smc_fid 0x%lx", smc_fid);
     }

@@ -56,10 +56,7 @@ static void psci_wake_from_powerdown(void)
     cpu_powerdown_wakeup();
 }
 
-void psci_wake_from_off(void);
-
 void (*psci_wake_handlers[PSCI_WAKEUP_NUM])(void) = {
-    [PSCI_WAKEUP_CPU_OFF] = psci_wake_from_off,
     [PSCI_WAKEUP_POWERDOWN] = psci_wake_from_powerdown,
 };
 
