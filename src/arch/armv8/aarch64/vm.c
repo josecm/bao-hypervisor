@@ -64,6 +64,7 @@ void vcpu_restore_state(struct vcpu *vcpu)
 
     vfp_restore_state(&vcpu->regs.vfp);
     vtimer_restore_state(vcpu);
+    vgic_restore_state(vcpu);
 }
 
 void vcpu_save_state(struct vcpu* vcpu)
@@ -88,4 +89,5 @@ void vcpu_save_state(struct vcpu* vcpu)
     vcpu_arch_profile_save_state(vcpu);
     vfp_save_state(&vcpu->regs.vfp);
     vtimer_save_state(vcpu);
+    vgic_save_state(vcpu);
 }
