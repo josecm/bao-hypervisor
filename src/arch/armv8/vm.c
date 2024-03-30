@@ -8,6 +8,7 @@
 #include <fences.h>
 #include <string.h>
 #include <config.h>
+#include <arch/vtimer.h>
 #include <arch/vfp.h>
 
 void vm_arch_init(struct vm* vm, const struct vm_config* vm_config)
@@ -52,12 +53,7 @@ void vcpu_arch_init(struct vcpu* vcpu, struct vm* vm)
 {
     vcpu->regs.vmpidr_el2 = vm_cpuid_to_mpidr(vm, vcpu->id);
 
-    if (vcpu->id == 0) {
-        vcpu->arch.psci_ctx.state = ON;
-    } else {
-        vcpu_block(vcpu);
-        vcpu->arch.psci_ctx.state = OFF;
-    }
+    vcpu->arch.psci_ctx.state = vcpu->id == 0 ? ON : OFF;
 
     vcpu->arch.psci_ctx.lock = SPINLOCK_INITVAL;
 
@@ -89,6 +85,7 @@ void vcpu_arch_reset(struct vcpu* vcpu, vaddr_t entry)
     vcpu->regs.cptr_el2 = 0;
 
     vfp_reset(&vcpu->regs.vfp);
+    vtimer_reset(vcpu);
 
     /**
      *  TODO: ARMv8-A ARM mentions another implementation optional registers that reset to a known

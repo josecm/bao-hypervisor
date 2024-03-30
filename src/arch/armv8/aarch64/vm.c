@@ -6,6 +6,7 @@
 #include <vm.h>
 #include <arch/sysregs.h>
 #include <arch/vfp.h>
+#include <arch/vtimer.h>
 
 unsigned long vcpu_readreg(struct vcpu* vcpu, unsigned long reg)
 {
@@ -62,6 +63,7 @@ void vcpu_restore_state(struct vcpu *vcpu)
     vcpu_arch_profile_restore_state(vcpu);
 
     vfp_restore_state(&vcpu->regs.vfp);
+    vtimer_restore_state(vcpu);
 }
 
 void vcpu_save_state(struct vcpu* vcpu)
@@ -85,5 +87,5 @@ void vcpu_save_state(struct vcpu* vcpu)
 
     vcpu_arch_profile_save_state(vcpu);
     vfp_save_state(&vcpu->regs.vfp);
-
+    vtimer_save_state(vcpu);
 }
