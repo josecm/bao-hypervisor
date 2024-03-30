@@ -27,6 +27,12 @@ union psci_msg_data {
         .vm_id = (uint16_t)VM_ID,                                 \
     }
 
+static void psci_vcpu_on(struct vcpu* vcpu)
+{
+    vcpu->arch.psci_ctx.state = ON;
+    vcpu_unblock(vcpu);
+}
+
 /* --------------------------------
     SMC Trapping
 --------------------------------- */
@@ -44,7 +50,7 @@ void psci_wake_from_off(vmid_t vm_id)
     spin_lock(&vcpu->arch.psci_ctx.lock);
     if (vcpu->arch.psci_ctx.state == ON_PENDING) {
         vcpu_arch_reset(vcpu, vcpu->arch.psci_ctx.entrypoint);
-        vcpu->arch.psci_ctx.state = ON;
+        psci_vcpu_on(vcpu);
         vcpu_writereg(vcpu, 0, vcpu->arch.psci_ctx.context_id);
     }
     spin_unlock(&vcpu->arch.psci_ctx.lock);
@@ -118,7 +124,7 @@ static int32_t psci_cpu_off_handler(struct vcpu* vcpu)
 
 static int32_t psci_cpu_on_handler(struct vcpu* vcpu)
 {
-    int32_t ret;
+    int32_t ret = PSCI_E_INVALID_PARAMS;
     unsigned long target_cpu_mpidr = vcpu_readreg(vcpu, 1);
     unsigned long entrypoint = vcpu_readreg(vcpu, 2);
     unsigned long context_id = vcpu_readreg(vcpu, 3);
