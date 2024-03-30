@@ -7,6 +7,7 @@
 #define VM_SUBARCH_H
 
 #include <bao.h>
+#include <arch/vfp.h>
 
 struct arch_regs {
     uint64_t x[31];
@@ -33,6 +34,8 @@ struct arch_regs {
     uint64_t csselr_el1;
     uint64_t vmpidr_el2;
     uint64_t cptr_el2;
+
+    struct vfp vfp;
 
 } __attribute__((aligned(16))); // makes size always aligned to 16 to respect stack alignment
 
