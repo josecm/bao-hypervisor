@@ -6,6 +6,7 @@
 #include <vmm.h>
 #include <arch/sysregs.h>
 #include <interrupts.h>
+#include <arch/vtimer.h>
 
 void vmm_arch_init()
 {
@@ -20,4 +21,6 @@ void vmm_arch_init()
     sysreg_hcr_el2_write(hcr);
 
     sysreg_cptr_el2_write(0);
+
+    interrupts_set_shared(VTIMER_IRQ_ID);
 }
