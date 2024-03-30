@@ -150,6 +150,9 @@ void vgic_emul_razwi(struct vcpu* vcpu, struct emul_access* acc, struct vgic_reg
 void vgic_save_state(struct vcpu* vcpu);
 void vgic_restore_state(struct vcpu* vcpu);
 
+void vgic_hw_irq_save_state(struct vcpu* vcpu, irqid_t irq_id);
+void vgic_hw_commit(struct vcpu* vcpu, irqid_t irq_id);
+
 /* interface for version specific vgic */
 bool vgic_int_has_other_target(struct vcpu* vcpu, struct vgic_int* interrupt);
 uint8_t vgic_int_ptarget_mask(struct vcpu* vcpu, struct vgic_int* interrupt);

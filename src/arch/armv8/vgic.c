@@ -1350,3 +1350,23 @@ void vgic_restore_state(struct vcpu* vcpu){
         gich_write_lr(i, vcpu->arch.vgic_priv.gich.lrs[i]);
     }
 }
+
+void vgic_hw_irq_save_state(struct vcpu* vcpu, irqid_t irq_id)
+{
+    struct vgic_int* interrupt = vgic_get_int(vcpu, irq_id, vcpu->id);
+    if (interrupt->hw) {
+        interrupt->state = vgic_get_state(vcpu, interrupt);
+    }
+}
+
+
+void vgic_hw_commit(struct vcpu* vcpu, irqid_t irq_id)
+{
+    struct vgic_int* interrupt = vgic_get_int(vcpu, irq_id, vcpu->id);
+    if (interrupt->hw) {
+        vgic_int_set_cfg_hw(vcpu, interrupt);
+        vgic_int_set_prio_hw(vcpu, interrupt);
+        vgic_int_state_hw(vcpu, interrupt);
+        vgic_int_enable_hw(vcpu, interrupt);
+    }
+}
