@@ -74,9 +74,22 @@
     mcr p15, 4, r1, c6, c1, 1
 #endif /* MEM_PROT_MPU */
 
-    ldr r0, [r0, #CPU_VCPU_OFF]
-    add r0, r0, #VCPU_REGS_OFF
-    mov sp, r0
+    ldr r1, [r0, #CPU_NEXT_VCPU_OFF]
+    cmp r1, #0
+    beq 11f
+    ldr r2, [r0, #CPU_VCPU_OFF]
+    cmp r1, r2
+    beq 1f
+    bl  vcpu_context_switch
+1:
+    ldr r0, [r1, #VCPU_BLOCKED_COUNT]
+    cmp r0, #0
+    beq 2f
+11:
+    bl cpu_arch_park
+    b  .
+2:
+    add sp, r1, #VCPU_REGS_OFF
 
     LOAD_ELR_SPSR
     pop {r0-r12}
