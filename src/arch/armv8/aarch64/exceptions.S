@@ -148,8 +148,13 @@ curr_el_spx_sync:
     bl	internal_abort_handler        
     b	.
 .balign ENTRY_SIZE
-curr_el_spx_irq:         
-    b	.
+curr_el_spx_irq:
+    /*
+     * The only reason we should arrive here is because the CPU is parked.
+     * In that case we don't need to save any context.
+     */
+    bl  gic_handle
+    b   vcpu_arch_entry
 .balign ENTRY_SIZE
 curr_el_spx_fiq:         
     b	.

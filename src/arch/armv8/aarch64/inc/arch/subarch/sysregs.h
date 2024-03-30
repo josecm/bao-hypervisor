@@ -190,6 +190,11 @@ static inline void arm_tlbi_ipas2e1is(vaddr_t vaddr)
     __asm__ volatile("tlbi ipas2e1is, %0" ::"r"(vaddr >> 12));
 }
 
+static inline void arm_clear_interrupt_flags(void)
+{
+__asm__ volatile("msr   daifclr, 0x3");
+}
+
 #endif /* |__ASSEMBLER__ */
 
 #endif /* __ARCH_SYSREGS_H__ */

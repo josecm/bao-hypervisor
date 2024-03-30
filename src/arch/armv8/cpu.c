@@ -51,3 +51,16 @@ void cpu_arch_powerdown()
 
     ERROR("returned from powerdown wake up");
 }
+
+void cpu_arch_park(void) {
+
+    // reset stack
+    __asm__ volatile("mov sp, %0\n\r" ::"r"(&cpu()->stack[STACK_SIZE]));
+
+    // enable interrupts
+    arm_clear_interrupt_flags();
+
+    while (true) {
+        __asm__ volatile("wfi");
+    }
+}

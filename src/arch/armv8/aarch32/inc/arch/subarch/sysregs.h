@@ -207,6 +207,11 @@ static inline void arm_tlbi_ipas2e1is(vaddr_t vaddr)
     __asm__ volatile("mcr p15, 4, %0, c8, c0, 1" ::"r"(vaddr >> 12));
 }
 
+static inline void arm_clear_interrupt_flags(void)
+{
+    __asm__ volatile("cpsie if");
+}
+
 #endif /* |__ASSEMBLER__ */
 
 #endif /* ARCH_PROFILE_SYSREGS_H */
