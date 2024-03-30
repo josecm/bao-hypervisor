@@ -37,6 +37,9 @@ struct arch_vm_platform {
 
 struct vm_arch {
     struct vgic vgic;
+#ifdef MEM_PROT_MMU
+    unsigned long vttbr_el2;
+#endif
 };
 
 struct vcpu_arch {
@@ -53,9 +56,12 @@ struct vcpu* vm_get_vcpu_by_mpidr(struct vm* vm, unsigned long mpidr);
 void vcpu_arch_entry(void);
 
 bool vcpu_arch_profile_on(struct vcpu* vcpu);
-void vcpu_subarch_reset(struct vcpu* vcpu);
 
+void vcpu_arch_profile_save_state(struct vcpu* vcpu);
+void vcpu_arch_profile_restore_state(struct vcpu* vcpu);
+void vcpu_subarch_reset(struct vcpu* vcpu);
 void vm_arch_profile_init(struct vm* vm);
+
 
 static inline void vcpu_arch_inject_hw_irq(struct vcpu* vcpu, irqid_t id)
 {

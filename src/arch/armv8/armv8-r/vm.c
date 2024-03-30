@@ -16,3 +16,13 @@ void vm_arch_profile_init(struct vm* vm)
         sysreg_vtcr_el2_write(vtcr);
     }
 }
+
+void vcpu_arch_profile_save_state(struct vcpu* vcpu)
+{
+    UNUSED_ARG(vcpu);
+}
+
+void vcpu_arch_profile_restore_state(struct vcpu* vcpu)
+{
+    UNUSED_ARG(vcpu);
+}

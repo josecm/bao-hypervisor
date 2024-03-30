@@ -234,3 +234,13 @@ void vcpu_subarch_reset(struct vcpu* vcpu)
 {
     vcpu->regs.spsr_hyp = SPSR_SVC | SPSR_F | SPSR_I | SPSR_A;
 }
+
+void vcpu_restore_state(struct vcpu *vcpu)
+{
+    UNUSED_ARG(vcpu);
+}
+
+void vcpu_save_state(struct vcpu* vcpu)
+{
+    UNUSED_ARG(vcpu);
+}

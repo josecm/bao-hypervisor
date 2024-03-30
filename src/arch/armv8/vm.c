@@ -23,7 +23,7 @@ struct vcpu* vm_get_vcpu_by_mpidr(struct vm* vm, unsigned long mpidr)
 {
     for (cpuid_t vcpuid = 0; vcpuid < vm->cpu_num; vcpuid++) {
         struct vcpu* vcpu = vm_get_vcpu(vm, vcpuid);
-        if ((vcpu->arch.vmpidr & MPIDR_AFF_MSK) == (mpidr & MPIDR_AFF_MSK)) {
+        if ((vcpu->regs.vmpidr_el2 & MPIDR_AFF_MSK) == (mpidr & MPIDR_AFF_MSK)) {
             return vcpu;
         }
     }
@@ -49,8 +49,7 @@ static unsigned long vm_cpuid_to_mpidr(struct vm* vm, vcpuid_t cpuid)
 
 void vcpu_arch_init(struct vcpu* vcpu, struct vm* vm)
 {
-    vcpu->arch.vmpidr = vm_cpuid_to_mpidr(vm, vcpu->id);
-    sysreg_vmpidr_el2_write(vcpu->arch.vmpidr);
+    vcpu->regs.vmpidr_el2 = vm_cpuid_to_mpidr(vm, vcpu->id);
 
     vcpu->arch.psci_ctx.state = vcpu->id == 0 ? ON : OFF;
     vcpu->arch.psci_ctx.lock = SPINLOCK_INITVAL;
@@ -60,20 +59,27 @@ void vcpu_arch_init(struct vcpu* vcpu, struct vm* vm)
 
 void vcpu_arch_reset(struct vcpu* vcpu, vaddr_t entry)
 {
-    memset(&vcpu->regs, 0, sizeof(struct arch_regs));
+    memset(vcpu->regs.x, 0, sizeof(vcpu->regs.x));
 
     vcpu_subarch_reset(vcpu);
 
     vcpu_writepc(vcpu, entry);
+    vcpu->regs.sctlr_el1 = SCTLR_RES1;
 
-    sysreg_cntvoff_el2_write(0);
+    vcpu->regs.vbar_el1 = 0;
+    vcpu->regs.mair_el1 = 0;
+    vcpu->regs.par_el1 = 0;
+    vcpu->regs.far_el1 = 0;
+    vcpu->regs.esr_el1 = 0;
+    vcpu->regs.elr_el1 = 0;
+    vcpu->regs.cpacr_el1 = 0;
+    vcpu->regs.contextidr_el1 = 0;
+    vcpu->regs.tpidr_el0 = 0;
+    vcpu->regs.tpidrro_el0 = 0;
+    vcpu->regs.tpidr_el1 = 0;
+    vcpu->regs.csselr_el1 = 0;
 
-    /**
-     *  See ARMv8-A ARM section D1.9.1 for registers that must be in a known state at reset.
-     */
-    sysreg_sctlr_el1_write(SCTLR_RES1);
-    sysreg_cntkctl_el1_write(0);
-    sysreg_pmcr_el0_write(0);
+    vcpu->regs.cptr_el2 = 0;
 
     /**
      *  TODO: ARMv8-A ARM mentions another implementation optional registers that reset to a known
