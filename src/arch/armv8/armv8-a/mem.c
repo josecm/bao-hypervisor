@@ -17,7 +17,7 @@ void as_arch_init(struct addr_space* as)
      * PT_CPU_REC index to navigate it, so we have to use the PT_VM_REC_IND.
      */
     if (as->type == AS_HYP_CPY || as->type == AS_VM) {
-        index = PT_VM_REC_IND;
+        index = (BAO_VAS_BASE >> 39) - 1 - as->id;
     } else {
         index = PT_CPU_REC_IND;
     }
