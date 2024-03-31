@@ -32,6 +32,7 @@ struct arch_platform {
 
     struct {
         paddr_t base_addr;
+        irqid_t hyp_irq;
         uint32_t fixed_freq;
     } generic_timer;
 
