@@ -415,7 +415,7 @@ void vgic_cpu_init(struct vcpu* vcpu)
     vcpu->arch.vgic_priv.gich.elrsr = 0;
     vcpu->arch.vgic_priv.gich.hcr = 0;
     vcpu->arch.vgic_priv.gich.vmcr = 0;
-    for (size_t i = 0; i < GICH_APR_NUM; i++) {
+    for (size_t i = 0; i < GICH_MAX_APR_NUM; i++) {
         vcpu->arch.vgic_priv.gich.ap1r[i] = 0;
     }
 }

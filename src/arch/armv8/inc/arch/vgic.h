@@ -78,7 +78,7 @@ struct gich_state {
     uint64_t elrsr;
     uint32_t hcr;
     uint32_t vmcr;
-    uint32_t ap1r[GICH_APR_NUM];
+    uint32_t ap1r[GICH_MAX_APR_NUM];
 };
 
 struct vgicr {

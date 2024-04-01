@@ -61,11 +61,15 @@ static inline uint64_t gich_get_elrsr(void)
 
 static inline uint32_t gich_get_ap1r(size_t index)
 {
+    UNUSED_ARG(index);
+
     return gich->APR;
 }
 
 static inline void gich_set_ap1r(size_t index, uint32_t ap1r)
 {
+    UNUSED_ARG(index);
+
     gich->APR = ap1r;
 }
 

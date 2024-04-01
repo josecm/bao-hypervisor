@@ -23,6 +23,20 @@ size_t gich_num_lrs(void)
     return ((sysreg_ich_vtr_el2_read() & ICH_VTR_MSK) >> ICH_VTR_OFF) + 1;
 }
 
+size_t gic_num_aprs() {
+    unsigned long icc_ctlr = sysreg_icc_ctlr_el1_read(); 
+    size_t num_prio_bits = bit_extract(icc_ctlr, ICC_CTLR_PRbits_OFF, ICC_CTLR_PRbits_LEN);
+    size_t num_apr;
+    if (num_prio_bits >= 7) {
+        num_apr = 4;
+    } else if (num_prio_bits >= 6) {
+        num_apr = 2;
+    } else {
+        num_apr = 1;
+    }
+    return num_apr;
+}
+
 static inline void gicc_init(void)
 {
     for (size_t i = 0; i < gich_num_lrs(); i++) {

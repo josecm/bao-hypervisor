@@ -214,6 +214,8 @@ struct gicr_hw {
 #define GICC_IAR_ID_MSK          (BIT32_MASK(GICC_IAR_ID_OFF, GICC_IAR_ID_LEN))
 
 #define ICC_CTLR_EOIMode_BIT     (0x1ULL << 1)
+#define ICC_CTLR_PRbits_OFF      (8)
+#define ICC_CTLR_PRbits_LEN      (3)
 #define ICC_SGIR_SGIINTID_OFF    24
 #define ICC_SGIR_SGIINTID_LEN    4
 #define ICC_SGIR_SGIINTID(sgir)  bit64_extract(sgir, ICC_SGIR_SGIINTID_OFF, ICC_SGIR_SGIINTID_LEN)
@@ -275,6 +277,7 @@ struct gicc_hw {
 #define ICH_VTR_MSK            GICH_VTR_MSK
 
 #if (GIC_VERSION == GICV2)
+#define GICH_MAX_APR_NUM      (1)
 #define GICH_LR_VID_OFF   (0)
 #define GICH_LR_VID_LEN   (10)
 #define GICH_LR_PID_OFF   (10)
@@ -294,6 +297,7 @@ struct gicc_hw {
 #define GICH_LR_STATE(LR) (bit32_extract(LR, GICH_LR_STATE_OFF, GICH_LR_STATE_LEN))
 typedef uint32_t gic_lr_t;
 #else
+#define GICH_MAX_APR_NUM      (4)
 #define GICH_LR_VID_OFF   (0)
 #define GICH_LR_VID_LEN   (32)
 #define GICH_LR_PID_OFF   (32)
@@ -351,7 +355,7 @@ struct gich_hw {
     uint8_t pad3[0xf0 - (0x30 + (sizeof(uint32_t)*GICH_NUM_ELRSR))];
     uint32_t APR;
     uint8_t pad4[0x100 - 0x0f4];
-    uint32_t LR[GIC_NUM_LIST_REGS];
+    uint32_t LR[GICH_MAX_NUM_LRS];
 } __attribute__((__packed__, aligned(0x1000)));
 
 struct gicv_hw {
@@ -392,10 +396,11 @@ struct gicc_state {
     uint32_t priv_IPRIORITYR[GIC_NUM_PRIO_REGS(GIC_CPU_PRIV)];
 
     uint32_t HCR;
-    gic_lr_t LR[GIC_NUM_LIST_REGS];
+    gic_lr_t LR[GICH_MAX_NUM_LRS];
 };
 
 extern size_t GIC_NUM_LRS;
+extern size_t GICH_NUM_APRS;
 
 void gic_init(void);
 void gic_cpu_init(void);
@@ -439,6 +444,7 @@ extern volatile struct gicd_hw* gicd;
 extern volatile struct gicr_hw* gicr;
 
 size_t gich_num_lrs(void);
+size_t gic_num_aprs(void);
 
 static inline size_t gic_num_irqs(void)
 {

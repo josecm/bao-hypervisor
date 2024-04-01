@@ -1328,7 +1328,7 @@ void vgic_save_state(struct vcpu* vcpu){
     vcpu->arch.vgic_priv.gich.vmcr = gich_get_vmcr();
     vcpu->arch.vgic_priv.gich.elrsr = gich_get_elrsr();
 
-    for (size_t i = 0; i < GICH_APR_NUM; i++) {
+    for (size_t i = 0; i < GICH_NUM_APRS; i++) {
         vcpu->arch.vgic_priv.gich.ap1r[i] = gich_get_ap1r(i);
     }
 
@@ -1342,7 +1342,7 @@ void vgic_restore_state(struct vcpu* vcpu){
     gich_set_hcr(vcpu->arch.vgic_priv.gich.hcr); 
     gich_set_vmcr(vcpu->arch.vgic_priv.gich.vmcr);
 
-    for (size_t i = 0; i < GICH_APR_NUM; i++) {
+    for (size_t i = 0; i < GICH_NUM_APRS; i++) {
         gich_set_ap1r(i, vcpu->arch.vgic_priv.gich.ap1r[i]);
     }
     
