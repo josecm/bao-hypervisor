@@ -9,6 +9,7 @@
 #include <vm.h>
 #include <bitmap.h>
 #include <string.h>
+#include <vmstack.h>
 
 BITMAP_ALLOC(hyp_interrupt_bitmap, MAX_INTERRUPTS);
 BITMAP_ALLOC(vm_interrupt_bitmap, MAX_INTERRUPTS);
@@ -94,6 +95,10 @@ enum irq_res interrupts_handle(irqid_t int_id)
             ERROR("No vcpu found for recevied interrupt %ld", int_id);
         }
         vcpu_inject_hw_irq(vcpu, int_id);
+
+        if (vcpu->stacked) {
+            vmstack_unwind(vcpu);
+        }
 
         return FORWARD_TO_VM;
      

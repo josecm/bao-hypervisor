@@ -69,4 +69,8 @@ static inline void vcpu_arch_inject_irq(struct vcpu* vcpu, irqid_t id)
     vgic_inject(vcpu, id, 0);
 }
 
+static inline struct timer_event* vcpu_get_timer_event(struct vcpu* vcpu) {
+    return vtimer_get_event(vcpu);
+}
+
 #endif /* __ARCH_VM_H__ */

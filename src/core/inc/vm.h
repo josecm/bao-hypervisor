@@ -96,7 +96,13 @@ struct vcpu {
     cpuid_t phys_id;
     
     spinlock_t blocked_count_lock;
-    int blocked_count;
+    unsigned long blocked_count;
+    
+    bool stacked;
+    node_t cpu_vcpu_stack_node;
+    struct list children;
+    node_t parent_list_node;
+    struct timer_event stack_timer_event;
 
     struct vm* vm;
 };
@@ -110,19 +116,20 @@ struct vm_allocation {
 
 extern struct vm vm;
 
-struct vm* vm_init(struct vm_allocation* vm_alloc, const struct vm_config* config, bool master,
+struct vcpu* vm_init(struct vm_allocation* vm_alloc, const struct vm_config* config, bool master,
     vmid_t vm_id);
 void vm_start(struct vm* vm, vaddr_t entry);
 void vm_emul_add_mem(struct vm* vm, struct emul_mem* emu);
 void vm_emul_add_reg(struct vm* vm, struct emul_reg* emu);
 emul_handler_t vm_emul_get_mem(struct vm* vm, vaddr_t addr);
 emul_handler_t vm_emul_get_reg(struct vm* vm, vaddr_t addr);
-void vcpu_init(struct vcpu* vcpu, struct vm* vm, vaddr_t entry);
+struct vcpu* vcpu_init(struct vcpu* vcpu, struct vm* vm, vaddr_t entry);
 void vm_msg_broadcast(struct vm* vm, struct cpu_msg* msg);
 cpumap_t vm_translate_to_pcpu_mask(struct vm* vm, cpumap_t mask, size_t len);
 cpumap_t vm_translate_to_vcpu_mask(struct vm* vm, cpumap_t mask, size_t len);
 void vcpu_save_state(struct vcpu *vcpu);
 void vcpu_restore_state(struct vcpu* vcpu);
+struct vcpu* vcpu_get_child(struct vcpu* vcpu, int index);
 
 static inline struct vcpu* vm_get_vcpu(struct vm* vm, vcpuid_t vcpuid)
 {

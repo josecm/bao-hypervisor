@@ -16,6 +16,7 @@ struct timer_event {
     node_t node;
     timer_value_t timer;
     timer_event_handler_t handler;
+    void* data;
 };
 
 void timer_init(void);

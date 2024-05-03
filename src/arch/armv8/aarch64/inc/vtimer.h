@@ -19,5 +19,6 @@ void vtimer_init(struct vcpu* vcpu);
 void vtimer_reset(struct vcpu* vcpu);
 void vtimer_save_state(struct vcpu* vcpu);
 void vtimer_restore_state(struct vcpu* vcpu);
+struct timer_event* vtimer_get_event(struct vcpu* vcpu);
 
 #endif /* VTIMER_H */

@@ -39,7 +39,7 @@ static vcpuid_t vm_calc_vcpu_id(struct vm* vm)
     return vcpu_id;
 }
 
-void vm_vcpu_init(struct vm* vm, const struct vm_config* config)
+struct vcpu* vm_vcpu_init(struct vm* vm, const struct vm_config* config)
 {
     vcpuid_t vcpu_id = vm_calc_vcpu_id(vm);
     struct vcpu* vcpu = vm_get_vcpu(vm, vcpu_id);
@@ -50,10 +50,15 @@ void vm_vcpu_init(struct vm* vm, const struct vm_config* config)
 
     vcpu->blocked_count = 0;
 
+    list_init(&vcpu->children);
+    vcpu->stacked = false;
+
     vcpu_arch_init(vcpu, vm);
     vcpu_arch_reset(vcpu, config->entry);
 
     cpu_add_vcpu(vcpu);
+
+    return vcpu;
 }
 
 void vm_map_mem_region(struct vm* vm, struct vm_mem_region* reg)
@@ -232,7 +237,7 @@ static struct vm* vm_allocation_init(struct vm_allocation* vm_alloc)
     return vm;
 }
 
-struct vm* vm_init(struct vm_allocation* vm_alloc, const struct vm_config* config, bool master,
+struct vcpu* vm_init(struct vm_allocation* vm_alloc, const struct vm_config* config, bool master,
     vmid_t vm_id)
 {
     struct vm* vm = vm_allocation_init(vm_alloc);
@@ -254,7 +259,7 @@ struct vm* vm_init(struct vm_allocation* vm_alloc, const struct vm_config* confi
     /*
      *  Initialize each virtual core.
      */
-    vm_vcpu_init(vm, config);
+    struct vcpu* vcpu = vm_vcpu_init(vm, config);
 
     cpu_sync_barrier(&vm->sync);
 
@@ -275,7 +280,7 @@ struct vm* vm_init(struct vm_allocation* vm_alloc, const struct vm_config* confi
 
     cpu_sync_and_clear_msgs(&vm->sync);
 
-    return vm;
+    return vcpu;
 }
 
 void vm_emul_add_mem(struct vm* vm, struct emul_mem* emu)
@@ -360,4 +365,17 @@ void vcpu_context_switch(void)
     }
     vcpu_restore_state(cpu()->next_vcpu);
     cpu()->vcpu = cpu()->next_vcpu;
+}
+
+struct vcpu* vcpu_get_child(struct vcpu* vcpu, int index){
+
+    int i = 0;
+    struct vcpu *child = NULL;
+    list_foreach(vcpu->children, node_t, node){
+        if(i++ == index){
+            child = CONTAINER_OF(struct vcpu, parent_list_node, node);
+            break;
+        }
+    }
+    return child;
 }

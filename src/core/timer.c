@@ -35,7 +35,7 @@ static void timer_irq_handler(irqid_t int_id)
     while ((next_node = list_peek(timer_cpu_list())) !=  NULL) {
         struct timer_event *next_event = CONTAINER_OF(struct timer_event, node, next_node);
         if (next_event->timer <= timer_arch_get_count()) {
-            (void)list_pop(timer_cpu_list());
+            (void)list_pop_head(timer_cpu_list());
             if (next_event->handler != NULL) {
                 next_event->handler(next_event);
             }

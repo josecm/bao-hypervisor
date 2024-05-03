@@ -24,6 +24,21 @@ static struct vm_assignment {
     volatile bool install_info_ready;
 } vm_assign[CONFIG_VM_NUM];
 
+struct vm_config* vm_config_by_id_table[CONFIG_VM_NUM];
+
+static vmid_t vmm_config_to_vmid(struct vm_config* config) {
+
+    vmid_t vm_id = INVALID_VMID;
+
+    for (size_t i = 0; i < CONFIG_VM_NUM; i++) {
+        if (config == vm_config_by_id_table[i]) {
+            vm_id = i;
+            break;
+        }
+    }
+
+    return vm_id;
+}
 
 static size_t max_vcpu_per_cpu() {
 
@@ -31,9 +46,9 @@ static size_t max_vcpu_per_cpu() {
     size_t exlusive_cpu_num = 0;
 
     for (size_t i = 0; i < config.vmlist_size; i++) {
-        vcpu_num += config.vmlist[i].platform.cpu_num;
-        if (config.vmlist[i].cpu_exclusivity) {
-            exlusive_cpu_num += config.vmlist[i].platform.cpu_num;
+        vcpu_num += config.vmlist[i]->platform.cpu_num;
+        if (config.vmlist[i]->cpu_exclusivity) {
+            exlusive_cpu_num += config.vmlist[i]->platform.cpu_num;
         }
     }
 
@@ -43,6 +58,28 @@ static size_t max_vcpu_per_cpu() {
         ((non_exclusive_vcpu_num % shared_cpu_num) > 0 ? 1 : 0);
 
     return max_vcpu;
+}
+
+static void vmm_assign_child_vcpus(struct vm_config* vm_config)
+{
+    vmid_t parent_vmid = vmm_config_to_vmid(vm_config);
+    cpumap_t parent_cpus = vm_assign[parent_vmid].cpus;
+
+    for (size_t i = 0; i < vm_config->children_num; i++) {
+        struct vm_config * child_config = vm_config->children[i];
+        size_t parent_num_cpus = vm_config->platform.cpu_num;
+        size_t child_num_cpus = child_config->platform.cpu_num;
+        if (child_num_cpus > parent_num_cpus) {
+            ERROR("Trying to assign more CPUs to a child VM than to its parent");
+        }
+        vmid_t child_vmid = vmm_config_to_vmid(child_config);
+        vm_assign[child_vmid].cpus = parent_cpus & BIT_MASK(0, parent_num_cpus);
+        vm_assign[child_vmid].ncpus = child_num_cpus;
+
+        for (size_t j = 0; j < child_config->children_num; j++) {
+            vmm_assign_child_vcpus(child_config);
+        }
+    }
 }
 
 static bool vmm_assign_vcpus()
@@ -65,8 +102,9 @@ static bool vmm_assign_vcpus()
 
         for (size_t i = 0; i < config.vmlist_size; i++) {
 
-            struct vm_config *vm_config = &config.vmlist[i];
-            struct vm_assignment *vm_assignment = &vm_assign[i];
+            struct vm_config *vm_config = config.vmlist[i];
+            vmid_t vm_id = vmm_config_to_vmid(vm_config);
+            struct vm_assignment *vm_assignment = &vm_assign[vm_id];
             size_t vm_cpu_num = vm_config->platform.cpu_num;
 
             if (cpu_search_params[k].find_exclusive && !vm_config->cpu_exclusivity) {
@@ -107,7 +145,10 @@ static bool vmm_assign_vcpus()
                 }
             }
         }
+    }
 
+    for (size_t i = 0; i < config.vmlist_size; i++) {
+        vmm_assign_child_vcpus(config.vmlist[i]);
     }
 
     return true;
@@ -141,10 +182,9 @@ static bool vmm_alloc_vm(struct vm_allocation* vm_alloc, struct vm_config* confi
     return true;
 }
 
-static struct vm_allocation* vmm_alloc_install_vm(vmid_t vm_id, bool master)
+static struct vm_allocation* vmm_alloc_install_vm(struct vm_config* vm_config, vmid_t vm_id, bool master)
 {
     struct vm_allocation* vm_alloc = &vm_assign[vm_id].vm_alloc;
-    struct vm_config* vm_config = &config.vmlist[vm_id];
     if (master) {
         if (!vmm_alloc_vm(vm_alloc, vm_config)) {
             ERROR("Failed to allocate vm internal structures");
@@ -161,23 +201,57 @@ static struct vm_allocation* vmm_alloc_install_vm(vmid_t vm_id, bool master)
     return vm_alloc;
 }
 
-static bool vmm_get_next_assigned_vm(bool *master, vmid_t *vm_id) {
+static void vmm_allocate_vmid_rec(struct vm_config* vm_config)
+{
+    static vmid_t next_vmid = 0;
+    vmid_t vm_id = next_vmid++;
+    vm_config_by_id_table[vm_id] = vm_config;
+    for (size_t i = 0; i < vm_config->children_num; i++) {
+        vmm_allocate_vmid_rec(vm_config->children[i]);
+    }
+}
+
+static void vmm_allocate_vmids()
+{
+    for (size_t i = 0; i < config.vmlist_size; i++) {
+        vmm_allocate_vmid_rec(config.vmlist[i]);
+    }
+}
+
+static struct vcpu* vmm_create_vm(struct vm_config* vm_config, vmid_t vm_id, bool master)
+{
+    struct vm_allocation* vm_alloc = vmm_alloc_install_vm(vm_config, vm_id, master);
+    struct vcpu* vcpu = vm_init(vm_alloc, vm_config, master, vm_id);
+    for (size_t i = 0; i < vm_config->children_num; i++) {
+        vmid_t child_vmid = vmm_config_to_vmid(vm_config->children[i]);
+        if (vm_assign[child_vmid].cpus & (1ULL << cpu()->id)) {
+            struct vcpu* child_vcpu = vmm_create_vm(vm_config->children[i], child_vmid, master);
+            list_push(&vcpu->children, &child_vcpu->parent_list_node);
+        }
+    }
+
+    return vcpu;
+}
+
+
+static bool vmm_get_next_assigned_root_vm(vmid_t *vm_id, bool *master) {
 
     bool assigned = false;
     *master = false;
 
     for (size_t i = 0; i < config.vmlist_size; i++) {
-        if (vm_assign[i].cpus & (1ULL << cpu()->id)) {
+        vmid_t vmid = vmm_config_to_vmid(config.vmlist[i]);
 
-            spin_lock(&vm_assign[i].lock);
-            vm_assign[i].cpus &= ~(1ULL << cpu()->id);
-            if (!vm_assign[i].master) {
-                vm_assign[i].master = true;
+        if (vm_assign[vmid].cpus & (1ULL << cpu()->id)) {
+            spin_lock(&vm_assign[vmid].lock);
+            vm_assign[vmid].cpus &= ~(1ULL << cpu()->id);
+            if (!vm_assign[vmid].master) {
+                vm_assign[vmid].master = true;
                 *master = true;
             }
-            spin_unlock(&vm_assign[i].lock);
+            spin_unlock(&vm_assign[vmid].lock);
     
-            *vm_id = i;
+            *vm_id = vmid;
             assigned = true;
             break;
         }
@@ -193,6 +267,7 @@ void vmm_init()
     ipc_init();
 
     if (cpu_is_master()) {
+        vmm_allocate_vmids();
         vmm_assign_vcpus();
     }
 
@@ -200,11 +275,8 @@ void vmm_init()
 
     bool master = false;
     vmid_t vm_id = -1;
-    while (vmm_get_next_assigned_vm(&master, &vm_id)) {
-        struct vm_allocation* vm_alloc = vmm_alloc_install_vm(vm_id, master);
-        struct vm_config* vm_config = &config.vmlist[vm_id];
-        vm_init(vm_alloc, vm_config, master, vm_id);
-
+    while (vmm_get_next_assigned_root_vm(&vm_id, &master)) {
+        vmm_create_vm(vm_config_by_id_table[vm_id], vm_id, master);
         // For now only the last vcpu assigned to this cpu will be scheduled
         // TODO: implement proper scheduler
         cpu()->next_vcpu = cpu_get_vcpu_by_vmid(vm_id);

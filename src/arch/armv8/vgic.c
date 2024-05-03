@@ -448,6 +448,8 @@ bool vgic_add_lr(struct vcpu* vcpu, struct vgic_int* interrupt)
     }
 
     if (lr_ind >= 0) {
+        if (interrupt->id > 31) 
+            INFO("vgic add irq%d to lr%d", interrupt->id, lr_ind);
         vgic_write_lr(vcpu, interrupt, lr_ind);
         ret = true;
     } else {
@@ -562,6 +564,14 @@ unsigned long vgic_int_get_enable(struct vcpu* vcpu, struct vgic_int* interrupt)
 {
     return (unsigned long)interrupt->enabled;
 }
+
+
+bool vgic_int_get_enable_by_id(struct vcpu* vcpu, irqid_t irq_id)
+{
+    struct vgic_int* interrupt = vgic_get_int(vcpu, irq_id, vcpu->id);
+    return (unsigned long)interrupt->enabled;
+}
+
 
 bool vgic_int_update_pend(struct vcpu* vcpu, struct vgic_int* interrupt, bool pend)
 {

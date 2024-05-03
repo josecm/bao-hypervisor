@@ -32,6 +32,8 @@ struct cpu {
     struct vcpu* next_vcpu; // next scheduled vcpu
     struct list vcpu_list;
 
+    struct list vcpu_stack;
+
     struct list timer_event_list;
 
     struct {

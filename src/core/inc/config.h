@@ -53,6 +53,7 @@
 #define CONFIG_HEADER
 
 struct vm_config {
+
     /**
      * To setup the image field either the VM_IMAGE_BUILTIN or VM_IMAGE_LOADED macros should be
      * used.
@@ -94,6 +95,10 @@ struct vm_config {
      */
     colormap_t colors;
 
+
+    size_t children_num;
+    struct vm_config* *children;
+
     /**
      * A description of the virtual platform available to the guest, i.e., the virtual machine
      * itself.
@@ -125,7 +130,7 @@ extern struct config {
     size_t vmlist_size;
 
     /* Array list with VM configuration */
-    struct vm_config vmlist[];
+    struct vm_config* vmlist[];
 
 } config;
 

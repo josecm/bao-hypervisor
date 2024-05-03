@@ -25,6 +25,7 @@ typedef signed long ssize_t;
 typedef unsigned long asid_t;
 
 typedef unsigned long vmid_t;
+#define INVALID_VMID ((vmid_t)-1)
 
 typedef uintptr_t paddr_t;
 typedef uintptr_t regaddr_t;

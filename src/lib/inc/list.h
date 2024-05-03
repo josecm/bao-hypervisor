@@ -52,7 +52,27 @@ static inline void list_push(struct list* list, node_t* node)
     }
 }
 
-static inline node_t* list_pop(struct list* list)
+static inline void list_push_head(struct list* list, node_t* node)
+{
+    if (list != NULL && node != NULL) {
+        *node = NULL;
+        spin_lock(&list->lock);
+
+        if (list->head != NULL) {
+            *node = list->head;
+        }
+
+        list->head = node;
+
+        if (list->tail == NULL) {
+            list->tail = node;
+        }
+
+        spin_unlock(&list->lock);
+    }
+}
+
+static inline node_t* list_pop_head(struct list* list)
 {
     node_t* temp = NULL;
     if (list != NULL) {

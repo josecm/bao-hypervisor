@@ -154,5 +154,6 @@ void vgic_hw_commit(struct vcpu* vcpu, irqid_t irq_id);
 bool vgic_int_has_other_target(struct vcpu* vcpu, struct vgic_int* interrupt);
 uint8_t vgic_int_ptarget_mask(struct vcpu* vcpu, struct vgic_int* interrupt);
 void vgic_inject_sgi(struct vcpu* vcpu, struct vgic_int* interrupt, vcpuid_t source);
+bool vgic_int_get_enable_by_id(struct vcpu* vcpu, irqid_t irq_id);
 
 #endif /* __VGIC_H__ */

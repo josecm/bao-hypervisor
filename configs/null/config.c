@@ -7,6 +7,8 @@
 
 #include <config.h>
 
+struct vm_config vm_null;
+
 struct config config = {
 
         /**
@@ -19,5 +21,8 @@ struct config config = {
          *  will fail.
          */
         .vmlist_size = 1,
+        .vmlist = {
+            &vm_null,
+        }
 
 };

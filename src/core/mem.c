@@ -274,7 +274,7 @@ bool mem_reserve_physical_memory(struct page_pool* pool)
     }
 
     for (size_t i = 0; i < config.vmlist_size; i++) {
-        struct vm_config* vm_cfg = &config.vmlist[i];
+        struct vm_config* vm_cfg = config.vmlist[i];
         size_t n_pg = NUM_PAGES(vm_cfg->image.size);
         struct ppages ppages = mem_ppages_get(vm_cfg->image.load_addr, n_pg);
 
@@ -294,7 +294,7 @@ bool mem_reserve_physical_memory(struct page_pool* pool)
 
     /* for every vm config */
     for (size_t i = 0; i < config.vmlist_size; i++) {
-        struct vm_config* vm_cfg = &config.vmlist[i];
+        struct vm_config* vm_cfg = config.vmlist[i];
         /* for every mem region */
         for (size_t j = 0; j < vm_cfg->platform.region_num; j++) {
             struct vm_mem_region* reg = &vm_cfg->platform.regions[j];
