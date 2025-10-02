@@ -146,9 +146,9 @@ void vgic_send_sgi_msg(struct vcpu* vcpu, cpumap_t pcpu_mask, irqid_t int_id)
 
 static void vgic_route(struct vcpu* vcpu, struct vgic_int* interrupt)
 {
-    if ((interrupt->state == INV) || !interrupt->enabled) {
-        return;
-    }
+    if ((interrupt->state == INV) || ((!interrupt->enabled) && (interrupt->state != ACT))) {
+         return;
+     }
 
     if (vgic_int_vcpu_is_target(vcpu, interrupt)) {
         vgic_add_lr(vcpu, interrupt);
@@ -315,9 +315,9 @@ bool vgic_add_lr(struct vcpu* vcpu, struct vgic_int* interrupt)
 {
     bool ret = false;
 
-    if (!interrupt->enabled || interrupt->in_lr) {
-        return ret;
-    }
+    if (interrupt->state == INV || interrupt->in_lr) {
+         return ret;
+     }
 
     ssize_t lr_ind = -1;
     uint64_t elrsr = gich_get_elrsr();
