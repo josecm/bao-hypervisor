@@ -64,11 +64,11 @@
     add x0, x0, x1
     mov sp, x0
 
-    #ifdef MEM_PROT_MPU
+#ifdef MEM_PROT_MPU
     mrs x0, tpidr_el2
-    ldr x0, [x0, #CPU_ARCH_PROFILE_MPU_MASK_OFF]
+    ldr x0, [x0, #CPU_ARCH_PROFILE_MPU_PRENR_OFF]
     msr prenr_el2, x0
-    #endif /* MEM_PROT_MPU */
+#endif /* MEM_PROT_MPU */
 
 .endm
 
@@ -82,12 +82,20 @@ vcpu_arch_entry:
     beq 1f
     bl  vcpu_context_switch
 1:
-    ldr x0, [x19, #VCPU_BLOCKED_COUNT]
-    cbz x0, 2f
+    ldr x1, [x19, #VCPU_BLOCKED_COUNT]
+    cbz x1, 2f
 11:
     bl cpu_arch_park
     b  .
 2:
+
+#ifdef MEM_PROT_MPU
+    ldr x1, [x19, #VCPU_ARCH_PROFILE_MPU_PRENR_OFF]
+    ldr x2, [x0, #CPU_ARCH_PROFILE_MPU_LOCKED_OFF]
+    orr x1, x1, x2
+    msr prenr_el2, x1
+ #endif /* MEM_PROT_MPU */
+
     add x0, x19, #VCPU_REGS_OFF
     mov sp, x0
 

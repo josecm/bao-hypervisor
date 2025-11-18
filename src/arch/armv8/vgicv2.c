@@ -148,7 +148,7 @@ void vgic_init(struct vm* vm, const struct vgic_dscrp* vgic_dscrp)
     vm->arch.vgic.vgicd.TYPER = ((vtyper_itln << GICD_TYPER_ITLN_OFF) & GICD_TYPER_ITLN_MSK) |
         (((vm->cpu_num - 1) << GICD_TYPER_CPUNUM_OFF) & GICD_TYPER_CPUNUM_MSK);
     vm->arch.vgic.vgicd.IIDR = gicd->IIDR;
-    vm->arch.vgicd.vgicd.lock = SPINLOCK_INITVAL;
+    vm->arch.vgic.vgicd.lock = SPINLOCK_INITVAL;
 
     size_t n = NUM_PAGES(sizeof(struct gicc_hw));
     mem_alloc_map_dev(&vm->as, SEC_VM_ANY, (vaddr_t)vgic_dscrp->gicc_addr,
@@ -211,7 +211,7 @@ void vgic_cpu_init(struct vcpu* vcpu)
     vcpu->arch.vgic_priv.gich.elrsr = 0;
     vcpu->arch.vgic_priv.gich.hcr = 0;
     vcpu->arch.vgic_priv.gich.vmcr = 0;
-    for (size_t i = 0; i < GICH_APR_NUM; i++) {
+    for (size_t i = 0; i < GICH_MAX_APR_NUM; i++) {
         vcpu->arch.vgic_priv.gich.ap1r[i] = 0;
     }
 }

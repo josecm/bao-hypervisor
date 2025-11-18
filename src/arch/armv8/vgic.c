@@ -44,14 +44,10 @@ extern volatile const size_t VGIC_IPI_ID;
 void vgic_ipi_handler(uint32_t event, uint64_t data);
 CPU_MSG_HANDLER(vgic_ipi_handler, VGIC_IPI_ID)
 
-static inline bool vgic_vcpu_is_current(struct vcpu* vcpu) {
-    return cpu()->vcpu == vcpu;
-}
-
 static gic_lr_t vgic_read_gich_lr(struct vcpu *vcpu, size_t lr_id)
 {
     gic_lr_t lr_value;
-    if (vgic_vcpu_is_current(vcpu)) {
+    if (cpu_vcpu_is_current(vcpu)) {
         lr_value = gich_read_lr(lr_id);
     } else {
         lr_value = vcpu->arch.vgic_priv.gich.lrs[lr_id];
@@ -72,7 +68,7 @@ static inline bool gich_lr_valid(gic_lr_t lr)
 
 static inline void vgic_write_gich_lr(struct vcpu *vcpu, size_t lr_id, gic_lr_t lr_val)
 {
-    if (vgic_vcpu_is_current(vcpu)) {
+    if (cpu_vcpu_is_current(vcpu)) {
         gich_write_lr(lr_id, lr_val);
     } else {
         vcpu->arch.vgic_priv.gich.lrs[lr_id] = lr_val;
@@ -88,7 +84,7 @@ static inline void vgic_write_gich_lr(struct vcpu *vcpu, size_t lr_id, gic_lr_t 
 static inline uint32_t vgic_get_gich_hcr(struct vcpu* vcpu)
 {
     uint32_t hcr;
-    if (vgic_vcpu_is_current(vcpu)) {
+    if (cpu_vcpu_is_current(vcpu)) {
         hcr = gich_get_hcr();
     } else {
         hcr = vcpu->arch.vgic_priv.gich.hcr;
@@ -98,7 +94,7 @@ static inline uint32_t vgic_get_gich_hcr(struct vcpu* vcpu)
 
 static inline void vgic_set_gich_hcr(struct vcpu* vcpu, uint32_t hcr_val)
 {
-    if (vgic_vcpu_is_current(vcpu)) {
+    if (cpu_vcpu_is_current(vcpu)) {
         gich_set_hcr(hcr_val);
     } else {
         vcpu->arch.vgic_priv.gich.hcr = hcr_val;
@@ -108,7 +104,7 @@ static inline void vgic_set_gich_hcr(struct vcpu* vcpu, uint32_t hcr_val)
 static inline uint64_t vgic_get_gich_elrsr(struct vcpu* vcpu)
 {
     uint64_t elrsr;
-    if (vgic_vcpu_is_current(vcpu)) {
+    if (cpu_vcpu_is_current(vcpu)) {
         elrsr = gich_get_elrsr();
     } else {
         elrsr = vcpu->arch.vgic_priv.gich.elrsr;
@@ -140,7 +136,7 @@ static inline ssize_t gich_get_lr(struct vcpu* vcpu, struct vgic_int* interrupt,
     }
 
     gic_lr_t lr_val = vgic_read_gich_lr(vcpu, interrupt->lr);
-    if (((irqid_t)(GICH_LR_VID(lr_val)) == interrupt->id) && (GICH_LR_STATE(lr_val) != INV)) {
+    if (((irqid_t)(GICH_LR_VID(lr_val)) == interrupt->id) ) {
         if (lr != NULL) {
             *lr = lr_val;
         }
@@ -412,7 +408,7 @@ bool vgic_add_lr(struct vcpu* vcpu, struct vgic_int* interrupt)
         size_t pend_found = 0;
         ssize_t pend_ind = -1, act_ind = -1;
 
-        for (size_t i = 0; i < GIC_NUM_LRS; i++) {
+        for (size_t i = 0; i < GICH_NUM_LRS; i++) {
             gic_lr_t lr = vgic_read_gich_lr(vcpu, i);
             irqid_t lr_id = (irqid_t)GICH_LR_VID(lr);
             unsigned lr_prio = (lr & GICH_LR_PRIO_MSK) >> GICH_LR_PRIO_OFF;
@@ -1223,7 +1219,7 @@ static void vgic_eoir_highest_spilled_active(struct vcpu* vcpu)
 static void vgic_handle_trapped_eoir(struct vcpu* vcpu)
 {
     uint64_t eisr = gich_get_eisr();
-    ssize_t lr_ind = bit64_ffs(eisr & BIT64_MASK(0, GIC_NUM_LRS));
+    ssize_t lr_ind = bit64_ffs(eisr & BIT64_MASK(0, GICH_NUM_LRS));
     while (lr_ind >= 0) {
         gic_lr_t lr_val = vgic_read_gich_lr(vcpu, (size_t)lr_ind);
         vgic_write_gich_lr(vcpu, (size_t)lr_ind, 0);
@@ -1242,7 +1238,7 @@ static void vgic_handle_trapped_eoir(struct vcpu* vcpu)
         }
         spin_unlock(&interrupt->lock);
         eisr = gich_get_eisr();
-        lr_ind = bit64_ffs(eisr & BIT64_MASK(0, GIC_NUM_LRS));
+        lr_ind = bit64_ffs(eisr & BIT64_MASK(0, GICH_NUM_LRS));
     }
 }
 
@@ -1332,7 +1328,7 @@ void vgic_save_state(struct vcpu* vcpu){
         vcpu->arch.vgic_priv.gich.ap1r[i] = gich_get_ap1r(i);
     }
 
-    for(size_t i = 0; i < GIC_NUM_LRS; i++){
+    for(size_t i = 0; i < GICH_NUM_LRS; i++){
         vcpu->arch.vgic_priv.gich.lrs[i] = gich_read_lr(i);
     }
 }
@@ -1346,7 +1342,7 @@ void vgic_restore_state(struct vcpu* vcpu){
         gich_set_ap1r(i, vcpu->arch.vgic_priv.gich.ap1r[i]);
     }
     
-    for(size_t i = 0; i < GIC_NUM_LRS; i++){
+    for(size_t i = 0; i < GICH_NUM_LRS; i++){
         gich_write_lr(i, vcpu->arch.vgic_priv.gich.lrs[i]);
     }
 }

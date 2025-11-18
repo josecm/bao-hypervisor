@@ -21,6 +21,19 @@ static size_t remio_dev_num(void)
     return dev_num;
 }
 
+static size_t mpu_num_entries(void)
+{
+    size_t total_num_guest_mpu_region = 0;
+    for (size_t i = 0; i < config.vmlist_size; i++) {
+        struct vm_platform *plat = &config.vmlist[i].platform;
+        size_t guest_total_num_guest_mpu_region = 
+            (plat->region_num + plat->dev_num + plat->ipc_num) * plat->cpu_num;
+        total_num_guest_mpu_region += guest_total_num_guest_mpu_region;
+    }
+
+    return total_num_guest_mpu_region;
+}
+
 int main() {
     size_t vcpu_num = 0;
     for (size_t i = 0; i < config.vmlist_size; i++) {
@@ -43,6 +56,11 @@ int main() {
     }
 
     printf("#define CONFIG_REMIO_DEV_NUM %ld\n", remio_dev_num());
+
+    if (DEFINED(MEM_PROT_MPU)) {
+
+        printf("#define CONFIG_MPU_NUM_ESTIMATED_VM_REGIONS %ld\n", mpu_num_entries());
+    }
 
     return 0;
  }

@@ -8,20 +8,28 @@
 #include <arch/fences.h>
 #include <tlb.h>
 
+void vcpu_arch_profile_init(struct vcpu* vcpu, struct vm* vm)
+{
+    UNUSED_ARG(vcpu);
+    UNUSED_ARG(vm);
+}
+
+void vcpu_profile_reset(struct vcpu* vcpu)
+{
+    vcpu->regs.ttbr0_el1 = 0;
+    vcpu->regs.ttbr1_el1 = 0;
+    vcpu->regs.tcr_el1 = 0;
+}
+
 void vm_arch_profile_init(struct vm* vm)
 {
     paddr_t root_pt_pa;
     mem_translate(&cpu()->as, (vaddr_t)vm->as.pt.root, &root_pt_pa);
-    vcpu->vm->arch.vttbr_el2 = (((uint64_t)vm->id << VTTBR_VMID_OFF) & VTTBR_VMID_MSK) |
+    vm->arch.vttbr_el2 = (((uint64_t)vm->id << VTTBR_VMID_OFF) & VTTBR_VMID_MSK) |
          (root_pt_pa & ~VTTBR_VMID_MSK);
 
     ISB(); // make sure vmid is commited befor tlbi
     tlb_vm_inv_all(vm->id);
-
-    vcpu->regs.ttbr0_el1 = 0;
-    vcpu->regs.ttbr1_el1 = 0;
-    vcpu->regs.tcr_el1 = 0;
-
 }
 
 void vcpu_arch_profile_save_state(struct vcpu* vcpu)

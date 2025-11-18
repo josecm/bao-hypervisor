@@ -22,11 +22,11 @@
 volatile struct gicd_hw* gicd;
 spinlock_t gicd_lock;
 
-size_t GIC_NUM_LRS;
+size_t GICH_NUM_LRS;
 
 static irqid_t gic_maintenance_id;
 
-size_t GIC_NUM_LRS;
+size_t GICH_NUM_LRS;
 size_t GICH_NUM_APRS;
 
 static void gicd_init(void)
@@ -90,8 +90,8 @@ void gic_init(void)
     if (cpu_is_master()) {
         gic_map_mmio();
         gicd_init();
-        GIC_NUM_LRS = gich_num_lrs();
-        GICH_NUM_APRS = gic_num_aprs();
+        GICH_NUM_LRS = gich_num_lrs();
+        GICH_NUM_APRS = gich_num_aprs();
     }
 
     cpu_sync_and_clear_msgs(&cpu_glb_sync);

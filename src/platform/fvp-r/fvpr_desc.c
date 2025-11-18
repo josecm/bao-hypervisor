@@ -5,6 +5,12 @@
 
 #include <platform.h>
 
+#ifdef AARCH64
+#define GENERIC_TIMER_HYP_IRQ   (20)
+#else
+#define GENERIC_TIMER_HYP_IRQ   (26)
+#endif
+
 struct platform platform = {
 
     .cpu_num = 4,
@@ -36,6 +42,7 @@ struct platform platform = {
 
         .generic_timer = {
             .base_addr = 0xAA430000,
+            .hyp_irq = GENERIC_TIMER_HYP_IRQ,
         },
     },
 

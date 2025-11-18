@@ -15,7 +15,14 @@
 #include <list.h>
 
 struct cpu_arch_profile {
-    struct mpu_arch mpu;
+    struct {
+        size_t entry_allocation_count[PLAT_NUM_EL2_MPU_REGIONS];
+        unsigned long locked_entries;
+        bool* resident[PLAT_NUM_EL2_MPU_REGIONS];
+        struct mpu* active_guest_mpu;
+    } mpu_mngmnt;
+
+    struct mpu mpu;
 };
 
 static inline struct cpu* cpu(void)

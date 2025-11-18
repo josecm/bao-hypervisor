@@ -2,6 +2,10 @@
 #include <string.h>
 #include <arch/sysregs.h>
 
+static inline bool vfp_cpu_supports_aarch32(void) {
+    return (sysreg_id_aa64pfr0_el1_read() & ID_AA64PFR0_EL1_EL0_MSK) == ID_AA64PFR0_EL1_EL0_EXEC_AARCH32;
+}
+
 void vfp_reset(struct vfp* vfp) {
     memset(vfp->q, 0, sizeof(vfp->q));
     vfp->fpcr = 0;
@@ -31,8 +35,11 @@ void vfp_save_state(struct vfp* vfp) {
     );
     
     vfp->fpcr = sysreg_fpcr_read();
-    vfp->fpexc32_el2 = sysreg_fpexc32_el2_read();
     vfp->fpsr = sysreg_fpsr_read();
+
+    if (vfp_cpu_supports_aarch32()) {
+        vfp->fpexc32_el2 = sysreg_fpexc32_el2_read();
+    }
 }
 
 
@@ -56,7 +63,11 @@ void vfp_restore_state(struct vfp* vfp) {
         "ldp q30, q31, [%0, (15 * 32)]\n\t"
         : : "r"(vfp->q) : "memory"
     );
+
     sysreg_fpcr_write(vfp->fpcr);
-    sysreg_fpexc32_el2_write(vfp->fpexc32_el2);
     sysreg_fpsr_write(vfp->fpsr);
+
+    if (vfp_cpu_supports_aarch32()) {
+        sysreg_fpexc32_el2_write(vfp->fpexc32_el2);
+    }
 }

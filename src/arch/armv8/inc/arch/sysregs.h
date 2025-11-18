@@ -15,6 +15,11 @@
 #define ID_AA64MMFR0_PAR_LEN      4
 #define ID_AA64MMFR0_PAR_MSK      BIT64_MASK(ID_AA64MMFR0_PAR_OFF, ID_AA64MMFR0_PAR_LEN)
 
+#define ID_AA64PFR0_EL1_EL0_OFF   (0)
+#define ID_AA64PFR0_EL1_EL0_LEN   (4)
+#define ID_AA64PFR0_EL1_EL0_MSK   BIT64_MASK(ID_AA64PFR0_EL1_EL0_OFF, ID_AA64PFR0_EL1_EL0_LEN)
+#define ID_AA64PFR0_EL1_EL0_EXEC_AARCH32    (2)
+
 #define PAR_32BIT                 (0)
 
 #define SPSel_SP                  (1 << 0)
@@ -42,6 +47,7 @@
 #define SPSR_EL2h                 (0x9)
 #define SPSR_EL3t                 (0xc)
 #define SPSR_EL3h                 (0xd)
+#define SPSR_AARCH32              (0x10)
 
 #define SPSR_F                    (1 << 6)
 #define SPSR_I                    (1 << 7)
@@ -49,6 +55,13 @@
 #define SPSR_D                    (1 << 9)
 #define SPSR_IL                   (1 << 20)
 #define SPSR_SS                   (1 << 21)
+
+#define SPSR_IT_LEN               (6)
+#define SPSR_IT_OFF               (10)          
+#define SPSR_IT_MSK               (BIT_MASK(SPSR_IT_OFF, SPSR_IT_LEN))
+#define SPSR_J                    (1UL << 24)
+#define SPSR_E                    (1UL << 9)
+#define SPSR_T                    (1UL << 5)
 
 #define SPSR_M_MSK                (0x1f)
 #define SPSR_USR                  (0x10)
@@ -231,6 +244,9 @@
 #define SCTLR_WXN                  (1 << 19)
 #define SCTLR_EE                   (1 << 25)
 
+#define SCTLR_V                    (1UL << 13)
+#define SCTLR_TE                   (1UL << 30)
+
 /* CLIDR - Cache Level ID Register */
 
 #define CLIDR_CTYPE_LEN            (0x03)
@@ -338,6 +354,7 @@
 #define ESR_ISS_LEN                (25)
 #define ESR_IL_OFF                 (25)
 #define ESR_IL_LEN                 (1)
+#define ESR_IL_BIT                 (1UL << 25)
 #define ESR_EC_OFF                 (26)
 #define ESR_EC_LEN                 (6)
 
@@ -366,10 +383,12 @@
 #define ESR_ISS_DA_WnR_BIT         (1 << 6)
 #define ESR_ISS_DA_S1PTW_OFF       (7)
 #define ESR_ISS_DA_S1PTW_LEN       (1)
+#define ESR_ISS_DA_S1PTW_BIT       (1UL << 7)
 #define ESR_ISS_DA_CM_OFF          (8)
 #define ESR_ISS_DA_CM_LEN          (1)
 #define ESR_ISS_DA_EA_OFF          (9)
 #define ESR_ISS_DA_EA_LEN          (1)
+#define ESR_ISS_DA_EA_BIT          (1UL << 9)
 #define ESR_ISS_DA_FnV_OFF         (10)
 #define ESR_ISS_DA_FnV_LEN         (1)
 #define ESR_ISS_DA_FnV_BIT         (1UL << 10)
@@ -389,11 +408,14 @@
 #define ESR_ISS_DA_ISV_LEN         (1)
 #define ESR_ISS_DA_ISV_BIT         (1UL << 24)
 
-#define ESR_ISS_DA_DSFC_CODE       (0xf << 2)
-#define ESR_ISS_DA_DSFC_ADDRSZ     (0x0)
-#define ESR_ISS_DA_DSFC_TRNSLT     (0x4)
-#define ESR_ISS_DA_DSFC_ACCESS     (0x8)
-#define ESR_ISS_DA_DSFC_PERMIS     (0xC)
+#define ESR_ISS_DA_DSFC_CODE                (0xf << 2)
+#define ESR_ISS_DA_DSFC_ADDRSZ              (0x0)
+#define ESR_ISS_DA_DSFC_TRNSLT              (0x4)
+#define ESR_ISS_DA_DSFC_ACCESS              (0x8)
+#define ESR_ISS_DA_DSFC_PERMIS              (0xC)
+#define ESR_ISS_DA_DFSC_SYNC_EXT            (0x10)
+#define ESR_ISS_DA_DSFC_SYNC_EXT_PTW_LVL0   (0x14)
+#define ESR_ISS_DA_DSFC_SYNC_EXT_PTW_LVL1   (0x15)
 
 #define ESR_ISS_SYSREG_ADDR        ((0xfff << 10) | (0xf << 1))
 #define ESR_ISS_SYSREG_ADDR_32     (0xFFC1E)
@@ -407,6 +429,15 @@
 #define OP0_MRS_CP15               ((0x3) << 20)
 
 #define UNDEFINED_REG_ADDR         (0xFFFFFFFFUL)
+
+/* IFSR/DFSR, Instruction/Data Fault Status Register */
+
+#define FSR_LPAE_BIT               (1UL << 9)
+#define FSR_WnR_BIT                (1UL << 11)
+#define FSR_ExT_BIT                (1UL << 12)
+#define FSR_FnV_BIT                (1UL << 16)
+#define FSR_SYNC_EXT_PTW_LVL1      (0x0c)
+#define FSR_SYNC_EXT               (0x08)
 
 /* VTTBR_EL2, Virtualization Translation Table Base Register */
 
@@ -423,6 +454,10 @@
 #define VSCTLR_EL2_VMID_OFF_ADJUST (16)
 #define VSCTLR_EL2_VMID_OFF        (REG_LENGTH - VSCTLR_EL2_VMID_OFF_ADJUST)
 #define VSCTLR_EL2_VMID_MSK        BIT_MASK(VSCTLR_EL2_VMID_OFF, VSCTLR_EL2_VMID_LEN)
+
+/* TTBCR, Translation Table Base Control Register */
+
+#define TTBCR_EAE   (1UL << 31)
 
 /* GICC System Register Interface Definitions */
 
@@ -480,9 +515,6 @@
 
 /* MPU registers */
 
-#define MPUIR_REGION_MSK           (0xFFUL)
-#define MPUIR_REGION(MPUIR)        ((MPUIR) & MPUIR_REGION_MSK)
-
 #ifdef AARCH64
 #define PRBAR_ADJUST_SHIFT 1
 #else
@@ -516,6 +548,14 @@
 #define PRLAR_LIMIT_MSK          (~PRBAR_FLAGS_MSK)
 #define PRLAR_LIMIT(LIMIT)       (((LIMIT) & PRLAR_LIMIT_MSK) | 0x3FUL)
 #define PRLAR_MEM_ATTR_FLAGS_MSK (0x0EUL)
+
+#ifdef AARCH64
+#define MPUIR_EL1_REGIONS_OFF   (0)
+#else
+#define MPUIR_EL1_REGIONS_OFF   (8)
+#endif
+
+#define MPUIR_EL1_REGIONS_MSK   (0xFF)
 
 /* Generic Timer */
 

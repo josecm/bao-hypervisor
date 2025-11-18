@@ -8,6 +8,7 @@
 
 #include <bao.h>
 #include <arch/sysregs.h>
+#include <arch/mpu.h>
 
 typedef union {
     struct {
@@ -35,6 +36,10 @@ typedef union {
         uint16_t prlar;
     };
 } mem_flags_t;
+
+struct addr_space_arch {
+    struct mpu mpu;
+};
 
 #define PTE_FLAGS(_prbar, _prlar) \
     ((mem_flags_t){               \

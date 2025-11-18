@@ -4,8 +4,12 @@
 CROSS_COMPILE ?= arm-none-eabi-
 
 arch-cppflags+=-DAARCH32
-arch-cflags+= -mfloat-abi=soft
+arch-cflags+= -mfpu=vfpv3 -mfloat-abi=softfp
 arch-asflags+=
-arch-ldflags+=
+
+## We need to use lgcc to use some of the 64-bit multiply/division helpers
+## So we need to point out the linker the path for the libraries
+lib_path := $(dir $(realpath $(shell $(cc) -print-libgcc-file-name)))
+arch-ldflags+= -L$(lib_path) -lgcc 
 
 clang_arch_target:=arm

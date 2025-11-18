@@ -8,6 +8,7 @@
 
 #include <bao.h>
 #include <arch/subarch/vm.h>
+#include <arch/profile/vm.h>
 #include <arch/vgic.h>
 #include <arch/psci.h>
 #include <arch/vtimer.h>
@@ -39,12 +40,13 @@ struct arch_vm_platform {
 struct vm_arch {
     struct vgic vgic;
 #ifdef MEM_PROT_MMU
-    unsigned long vttbr_el2;
+    uint64_t vttbr_el2;
 #endif
 };
 
 struct vcpu_arch {
     unsigned long vmpidr;
+    struct vcpu_arch_profile profile;
     struct vgic_priv vgic_priv;
     struct psci_ctx psci_ctx;
     struct vtimer vtimer;
@@ -61,8 +63,12 @@ bool vcpu_arch_profile_on(struct vcpu* vcpu);
 
 void vcpu_arch_profile_save_state(struct vcpu* vcpu);
 void vcpu_arch_profile_restore_state(struct vcpu* vcpu);
+void vcpu_subarch_restore_state(struct vcpu *vcpu);
+void vcpu_subarch_save_state(struct vcpu* vcpu);
 void vcpu_subarch_reset(struct vcpu* vcpu);
+void vcpu_profile_reset(struct vcpu* vcpu);
 void vm_arch_profile_init(struct vm* vm);
+void vcpu_arch_profile_init(struct vcpu* vcpu, struct vm* vm);
 
 
 static inline void vcpu_arch_inject_hw_irq(struct vcpu* vcpu, irqid_t id)

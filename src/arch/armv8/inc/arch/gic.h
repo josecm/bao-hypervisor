@@ -265,18 +265,8 @@ struct gicc_hw {
 #define GICH_HCR_EOICount_LEN  (5)
 #define GICH_HCR_EOICount_MASK BIT32_MASK(GICH_HCR_EOICount_OFF, GICH_HCR_EOICount_LEN)
 
-#define ICH_HCR_VGrp1EIE_BIT   (1ULL << 6)
-#define ICH_HCR_LRENPIE_BIT    GICH_HCR_LRENPIE_BIT
-
-#define GICH_VTR_OFF           (0)
-#define GICH_VTR_LEN           (6)
-#define GICH_VTR_MSK           BIT32_MASK(GICH_VTR_OFF, GICH_VTR_LEN)
-
-#define ICH_VTR_OFF            GICH_VTR_OFF
-#define ICH_VTR_LEN            GICH_VTR_LEN
-#define ICH_VTR_MSK            GICH_VTR_MSK
-
 #if (GIC_VERSION == GICV2)
+#define GICH_VTR_LISTREGS_LEN       (6)
 #define GICH_MAX_APR_NUM      (1)
 #define GICH_LR_VID_OFF   (0)
 #define GICH_LR_VID_LEN   (10)
@@ -297,6 +287,7 @@ struct gicc_hw {
 #define GICH_LR_STATE(LR) (bit32_extract(LR, GICH_LR_STATE_OFF, GICH_LR_STATE_LEN))
 typedef uint32_t gic_lr_t;
 #else
+#define GICH_VTR_LISTREGS_LEN       (5)
 #define GICH_MAX_APR_NUM      (4)
 #define GICH_LR_VID_OFF   (0)
 #define GICH_LR_VID_LEN   (32)
@@ -318,6 +309,13 @@ typedef uint32_t gic_lr_t;
 #define GICH_LR_STATE(LR) (bit64_extract(LR, GICH_LR_STATE_OFF, GICH_LR_STATE_LEN))
 typedef uint64_t gic_lr_t;
 #endif
+
+#define GICH_VTR_LISTREGS_OFF           (0)
+#define GICH_VTR_LISTREGS_MSK           BIT32_MASK(GICH_VTR_LISTREGS_OFF, GICH_VTR_LISTREGS_LEN)
+
+#define GICH_VTR_PRIBITS_OFF       (29)
+#define GICH_VTR_PRIBITS_LEN       (3)
+#define GICH_VTR_PRIBITS_MSK       BIT32_MASK(GICH_VTR_PRIBITS_OFF, GICH_VTR_PRIBITS_LEN)
 
 #define GICH_LR_CPUID_OFF     (10)
 #define GICH_LR_CPUID_LEN     (3)
@@ -399,7 +397,7 @@ struct gicc_state {
     gic_lr_t LR[GICH_MAX_NUM_LRS];
 };
 
-extern size_t GIC_NUM_LRS;
+extern size_t GICH_NUM_LRS;
 extern size_t GICH_NUM_APRS;
 
 void gic_init(void);
@@ -444,7 +442,7 @@ extern volatile struct gicd_hw* gicd;
 extern volatile struct gicr_hw* gicr;
 
 size_t gich_num_lrs(void);
-size_t gic_num_aprs(void);
+size_t gich_num_aprs(void);
 
 static inline size_t gic_num_irqs(void)
 {

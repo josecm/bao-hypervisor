@@ -12,45 +12,42 @@
 #include <config.h>
 #include <hypercall.h>
 
-typedef void (*abort_handler_t)(unsigned long, unsigned long, unsigned long, unsigned long);
+typedef bool (*abort_handler_t)(unsigned long, unsigned long, unsigned long, unsigned long);
 
-static void aborts_data_lower(unsigned long iss, unsigned long far, unsigned long il,
+static bool aborts_data_lower(unsigned long iss, unsigned long far, unsigned long il,
     unsigned long ec)
 {
     UNUSED_ARG(ec);
 
-    if (!(iss & ESR_ISS_DA_ISV_BIT) || (iss & ESR_ISS_DA_FnV_BIT)) {
-        ERROR("no information to handle data abort (0x%x)", far);
-    }
+    bool abort_handled = false;
 
     unsigned long DSFC = bit_extract(iss, ESR_ISS_DA_DSFC_OFF, ESR_ISS_DA_DSFC_LEN) & (0xf << 2);
+    bool abort_cause_supported = (DSFC == ESR_ISS_DA_DSFC_TRNSLT) || (DSFC == ESR_ISS_DA_DSFC_PERMIS);
+    bool decode_info_avail = (iss & ESR_ISS_DA_ISV_BIT) && !(iss & ESR_ISS_DA_FnV_BIT);
 
-    if (DSFC != ESR_ISS_DA_DSFC_TRNSLT && DSFC != ESR_ISS_DA_DSFC_PERMIS) {
-        ERROR("data abort is not translation fault - cant deal with it");
-    }
+    if (abort_cause_supported && decode_info_avail) {
+        vaddr_t addr = far;
+        emul_handler_t handler = vm_emul_get_mem(cpu()->vcpu->vm, addr);
+        if (handler != NULL) {
+            struct emul_access emul;
+            emul.addr = addr;
+            emul.width = (1U << bit_extract(iss, ESR_ISS_DA_SAS_OFF, ESR_ISS_DA_SAS_LEN));
+            emul.write = iss & ESR_ISS_DA_WnR_BIT ? true : false;
+            emul.reg = bit_extract(iss, ESR_ISS_DA_SRT_OFF, ESR_ISS_DA_SRT_LEN);
+            emul.reg_width = 4 + (4 * bit_extract(iss, ESR_ISS_DA_SF_OFF, ESR_ISS_DA_SF_LEN));
+            emul.sign_ext = bit_extract(iss, ESR_ISS_DA_SSE_OFF, ESR_ISS_DA_SSE_LEN);
 
-    vaddr_t addr = far;
-    emul_handler_t handler = vm_emul_get_mem(cpu()->vcpu->vm, addr);
-    if (handler != NULL) {
-        struct emul_access emul;
-        emul.addr = addr;
-        emul.width = (1U << bit_extract(iss, ESR_ISS_DA_SAS_OFF, ESR_ISS_DA_SAS_LEN));
-        emul.write = iss & ESR_ISS_DA_WnR_BIT ? true : false;
-        emul.reg = bit_extract(iss, ESR_ISS_DA_SRT_OFF, ESR_ISS_DA_SRT_LEN);
-        emul.reg_width = 4 + (4 * bit_extract(iss, ESR_ISS_DA_SF_OFF, ESR_ISS_DA_SF_LEN));
-        emul.sign_ext = bit_extract(iss, ESR_ISS_DA_SSE_OFF, ESR_ISS_DA_SSE_LEN);
+            // TODO: check if the access is aligned. If not, inject an exception in the vm
 
-        // TODO: check if the access is aligned. If not, inject an exception in the vm
-
-        if (handler(cpu()->vcpu, &emul)) {
-            unsigned long pc_step = 2 + (2 * il);
-            vcpu_writepc(cpu()->vcpu, vcpu_readpc(cpu()->vcpu) + pc_step);
-        } else {
-            ERROR("data abort emulation failed (0x%x)", far);
+            if (handler(cpu()->vcpu, &emul)) {
+                unsigned long pc_step = 2 + (2 * il);
+                vcpu_writepc(cpu()->vcpu, vcpu_readpc(cpu()->vcpu) + pc_step);
+                abort_handled = true;
+            } 
         }
-    } else {
-        ERROR("no emulation handler for abort(0x%x at 0x%x)", far, vcpu_readpc(cpu()->vcpu));
     }
+
+    return abort_handled;
 }
 
 static long int standard_service_call(unsigned long _fn_num)
@@ -70,7 +67,7 @@ static long int standard_service_call(unsigned long _fn_num)
     return ret;
 }
 
-static inline void syscall_handler(unsigned long iss, unsigned long far, unsigned long il,
+static inline bool syscall_handler(unsigned long iss, unsigned long far, unsigned long il,
     unsigned long ec)
 {
     UNUSED_ARG(iss);
@@ -95,25 +92,31 @@ static inline void syscall_handler(unsigned long iss, unsigned long far, unsigne
     }
 
     vcpu_writereg(cpu()->vcpu, 0, (unsigned long)ret);
+
+    return true;
 }
 
-static void hvc_handler(unsigned long iss, unsigned long far, unsigned long il, unsigned long ec)
+static bool hvc_handler(unsigned long iss, unsigned long far, unsigned long il, unsigned long ec)
 {
-    syscall_handler(iss, far, il, ec);
+    return syscall_handler(iss, far, il, ec);
 }
 
-static void smc_handler(unsigned long iss, unsigned long far, unsigned long il, unsigned long ec)
+static bool smc_handler(unsigned long iss, unsigned long far, unsigned long il, unsigned long ec)
 {
     UNUSED_ARG(far);
 
-    syscall_handler(iss, far, il, ec);
+    bool handled = syscall_handler(iss, far, il, ec);
 
-    /**
-     * Since SMCs are trapped due to setting hcr_el2.tsc, the "preferred exception return address"
-     * is the address of the actual smc instruction. Thus, we need to adjust it to the next
-     * instruction.
-     */
-    vcpu_writepc(cpu()->vcpu, vcpu_readpc(cpu()->vcpu) + 4);
+    if (handled) {
+        /**
+         * Since SMCs are trapped due to setting hcr_el2.tsc, the "preferred exception return address"
+         * is the address of the actual smc instruction. Thus, we need to adjust it to the next
+         * instruction.
+         */
+        vcpu_writepc(cpu()->vcpu, vcpu_readpc(cpu()->vcpu) + 4);
+    }
+
+    return handled;
 }
 
 static regaddr_t reg_addr_translate(unsigned long iss)
@@ -126,9 +129,11 @@ static regaddr_t reg_addr_translate(unsigned long iss)
     }
 }
 
-static void sysreg_handler(unsigned long iss, unsigned long far, unsigned long il, unsigned long ec)
+static bool sysreg_handler(unsigned long iss, unsigned long far, unsigned long il, unsigned long ec)
 {
     UNUSED_ARG(far);
+
+    bool sysreg_access_handled = false;
 
     regaddr_t reg_addr = UNDEFINED_REG_ADDR;
     if (ec == ESR_EC_RG_64) {
@@ -152,13 +157,45 @@ static void sysreg_handler(unsigned long iss, unsigned long far, unsigned long i
         if (handler(cpu()->vcpu, &emul)) {
             unsigned long pc_step = 2 + (2 * il);
             vcpu_writepc(cpu()->vcpu, vcpu_readpc(cpu()->vcpu) + pc_step);
-        } else {
-            ERROR("register access emulation failed (0x%x)", reg_addr);
+            sysreg_access_handled = true;
         }
-    } else {
-        ERROR("no emulation handler for register access (0x%x at 0x%x)", reg_addr,
-            vcpu_readpc(cpu()->vcpu));
+    } 
+    
+    return sysreg_access_handled;
+}
+
+static bool aborts_redirect_to_vcpu(unsigned long iss, unsigned long long far, unsigned long il, unsigned long ec)
+{
+    /**
+     * The far parameter is the faulting addressing from the perspective of the
+     * hypervisor (i.e., faulting IPA). What we want to propagate is the guest
+     * faulting VA, which we cant get from far_el2.
+     */
+    UNUSED_ARG(far); 
+    unsigned long far_el1 = sysreg_far_el2_read();
+
+    bool abort_redirected = false;
+
+    switch (ec) {
+        case ESR_EC_DALEL:
+            abort_redirected = aborts_vcpu_inject_data_abort(iss, far_el1, il, ec);
+            break;
+        case ESR_EC_IALEL:
+            abort_redirected = aborts_vcpu_inject_inst_abort(iss, far_el1, il, ec);
+            break;
+        default:
+            /**
+             * We consider all synchronous exceptions besides data/instructions aborts as undefined (EC = Unknown) 
+             * as this is always a valid cause that the guest can understand. We do this to avoid complex filtering
+             * and translation between the hypervisor's ec and the ec the guest should see.
+             * TODO: We code allow "passthrough" of some other exception codes such as sp alignemnt or coprocessor access, 
+             * but this as to analyzed per exception code if it is safe to do.
+             */
+            abort_redirected = aborts_vcpu_inject_undef_abort(iss, far_el1, il, ec);
+            break;
     }
+
+    return abort_redirected;
 }
 
 abort_handler_t abort_handlers[64] = {
@@ -189,10 +226,17 @@ void aborts_sync_handler(void)
     unsigned long il = bit_extract(esr, ESR_IL_OFF, ESR_IL_LEN);
     unsigned long iss = bit_extract(esr, ESR_ISS_OFF, ESR_ISS_LEN);
 
+    bool abort_handled = false;
     abort_handler_t handler = abort_handlers[ec];
-    if (handler) {
-        handler(iss, ipa_fault_addr, il, ec);
-    } else {
-        ERROR("no handler for abort ec = 0x%x", ec); // unknown guest exception
+    if (handler != NULL) {
+        abort_handled = handler(iss, ipa_fault_addr, il, ec);
     }
+
+    if (!abort_handled) {
+        bool abort_redirected = aborts_redirect_to_vcpu(iss, ipa_fault_addr, il, ec);
+        if (!abort_redirected) {
+            vcpu_block(cpu()->vcpu);
+        }
+    }
+
 }

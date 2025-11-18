@@ -10,7 +10,7 @@
 
 static inline uint64_t gich_read_lr(size_t i)
 {
-    if (i >= GIC_NUM_LRS) {
+    if (i >= GICH_NUM_LRS) {
         ERROR("gic: trying to read inexistent list register");
     }
 
@@ -54,7 +54,7 @@ static inline uint64_t gich_read_lr(size_t i)
 
 static inline void gich_write_lr(size_t i, uint64_t val)
 {
-    if (i >= GIC_NUM_LRS) {
+    if (i >= GICH_NUM_LRS) {
         ERROR("gic: trying to write inexistent list register");
     }
 

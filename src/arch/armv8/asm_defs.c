@@ -20,8 +20,8 @@ __attribute__((used)) static void cpu_defines(void)
     DEFINE_OFFSET(CPU_NEXT_VCPU_OFF, struct cpu, next_vcpu);
 
 #ifdef MEM_PROT_MPU
-    DEFINE_OFFSET(CPU_ARCH_PROFILE_MPU_LOCKED_OFF, struct cpu, arch.profile.mpu.locked_entries);
-    DEFINE_OFFSET(CPU_ARCH_PROFILE_MPU_MASK_OFF, struct cpu, arch.profile.mpu.mpu_entry_mask);
+    DEFINE_OFFSET(CPU_ARCH_PROFILE_MPU_PRENR_OFF, struct cpu, arch.profile.mpu.prenr);
+    DEFINE_OFFSET(CPU_ARCH_PROFILE_MPU_LOCKED_OFF, struct cpu, arch.profile.mpu.locked);
 #endif /* MEM_PROT_MPU */
 }
 
@@ -34,7 +34,7 @@ __attribute__((used)) static void vcpu_defines(void)
     DEFINE_OFFSET(VCPU_BLOCKED_COUNT, struct vcpu, blocked_count);
 
 #ifdef MEM_PROT_MPU
-    DEFINE_OFFSET(VCPU_ARCH_MASK_OFF, struct vcpu, arch.mpu_entry_mask);
+    DEFINE_OFFSET(VCPU_ARCH_PROFILE_MPU_PRENR_OFF, struct vcpu, arch.profile.mpu.prenr);
 #endif /* MEM_PROT_MPU */
 }
 

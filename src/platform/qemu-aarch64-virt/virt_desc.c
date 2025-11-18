@@ -29,6 +29,8 @@ struct platform platform = {
             .gicr_addr = 0x080A0000,
             .maintenance_id = 25,
         },
+
+        .generic_timer.hyp_irq = 26,
     },
 
 };

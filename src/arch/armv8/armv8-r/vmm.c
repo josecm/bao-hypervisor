@@ -10,7 +10,7 @@
 #include <cpu.h>
 #include <fences.h>
 
-static uint32_t timer_freq = 0;
+static unsigned long timer_freq = 0;
 
 void vmm_arch_profile_init()
 {

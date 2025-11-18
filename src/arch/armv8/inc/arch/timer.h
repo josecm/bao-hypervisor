@@ -38,7 +38,7 @@ static inline void timer_arch_init(void)
 {
     unsigned long cnthp_ctl_el2 = sysreg_cnthp_ctl_el2_read();
     sysreg_cnthp_ctl_el2_write(cnthp_ctl_el2 | CNT_CTL_ENABLE);
-    timer_arch_disable();
+    sysreg_cnthp_cval_el2_write(~((uint64_t)0));
 }
 
 #endif /* TIMER_ARCH_H */

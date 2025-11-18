@@ -20,12 +20,12 @@ static spinlock_t gicr_lock = SPINLOCK_INITVAL;
 
 size_t gich_num_lrs(void)
 {
-    return ((sysreg_ich_vtr_el2_read() & ICH_VTR_MSK) >> ICH_VTR_OFF) + 1;
+    return ((sysreg_ich_vtr_el2_read() & GICH_VTR_LISTREGS_MSK) >> GICH_VTR_LISTREGS_OFF) + 1;
 }
 
-size_t gic_num_aprs() {
-    unsigned long icc_ctlr = sysreg_icc_ctlr_el1_read(); 
-    size_t num_prio_bits = bit_extract(icc_ctlr, ICC_CTLR_PRbits_OFF, ICC_CTLR_PRbits_LEN);
+size_t gich_num_aprs() {
+    unsigned long ich_vtr = sysreg_ich_vtr_el2_read(); 
+    size_t num_prio_bits = bit_extract(ich_vtr, GICH_VTR_PRIBITS_OFF, GICH_VTR_PRIBITS_LEN) + 1;
     size_t num_apr;
     if (num_prio_bits >= 7) {
         num_apr = 4;
@@ -46,7 +46,7 @@ static inline void gicc_init(void)
     sysreg_icc_pmr_el1_write(GIC_LOWEST_PRIO);
     sysreg_icc_bpr1_el1_write(0x0);
     sysreg_icc_ctlr_el1_write(ICC_CTLR_EOIMode_BIT);
-    sysreg_ich_hcr_el2_write(sysreg_ich_hcr_el2_read() | ICH_HCR_LRENPIE_BIT);
+    sysreg_ich_hcr_el2_write(sysreg_ich_hcr_el2_read() | GICH_HCR_LRENPIE_BIT);
     sysreg_icc_igrpen1_el1_write(ICC_IGRPEN_EL1_ENB_BIT);
 }
 

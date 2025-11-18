@@ -34,6 +34,7 @@ struct arch_regs {
     uint64_t csselr_el1;
     uint64_t vmpidr_el2;
     uint64_t cptr_el2;
+    uint64_t spsr_el1;
 
     struct vfp vfp;
 

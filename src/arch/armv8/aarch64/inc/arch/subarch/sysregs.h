@@ -44,9 +44,45 @@
 #define ich_lr14_el2    S3_4_C12_C13_6
 #define ich_lr15_el2    S3_4_C12_C13_7
 
+#define prselr_el1      S3_0_C6_C2_1
+#define mpuir_el1       S3_0_C0_C0_4
+#define prbar0_el1      S3_0_C6_C8_0
+#define prbar1_el1      S3_0_C6_C8_4
+#define prbar2_el1      S3_0_C6_C9_0
+#define prbar3_el1      S3_0_C6_C9_4
+#define prbar4_el1      S3_0_C6_C10_0
+#define prbar5_el1      S3_0_C6_C10_4
+#define prbar6_el1      S3_0_C6_C12_0
+#define prbar7_el1      S3_0_C6_C11_4
+#define prbar8_el1      S3_0_C6_C12_0
+#define prbar9_el1      S3_0_C6_C12_4
+#define prbar10_el1     S3_0_C6_C13_0
+#define prbar11_el1     S3_0_C6_C13_4
+#define prbar12_el1     S3_0_C6_C14_0
+#define prbar13_el1     S3_0_C6_C14_4
+#define prbar14_el1     S3_0_C6_C15_0
+#define prbar15_el1     S3_0_C6_C15_4
+#define prlar0_el1      S3_0_C6_C8_1
+#define prlar1_el1      S3_0_C6_C8_5
+#define prlar2_el1      S3_0_C6_C9_1
+#define prlar3_el1      S3_0_C6_C9_5
+#define prlar4_el1      S3_0_C6_C10_1
+#define prlar5_el1      S3_0_C6_C10_5
+#define prlar6_el1      S3_0_C6_C12_1
+#define prlar7_el1      S3_0_C6_C11_5
+#define prlar8_el1      S3_0_C6_C12_1
+#define prlar9_el1      S3_0_C6_C12_5
+#define prlar10_el1     S3_0_C6_C13_1 
+#define prlar11_el1     S3_0_C6_C13_5 
+#define prlar12_el1     S3_0_C6_C14_1 
+#define prlar13_el1     S3_0_C6_C14_5 
+#define prlar14_el1     S3_0_C6_C15_1 
+#define prlar15_el1     S3_0_C6_C15_5 
+
+     
 #ifndef __ASSEMBLER__
 
-#define SYSREG_GEN_ACCESSORS_NAME(reg, name)                          \
+#define SYSREG_GEN_ACCESSORS_INNER(reg, name)                         \
     static inline unsigned long sysreg##reg##read(void)               \
     {                                                                 \
         unsigned long _temp;                                          \
@@ -58,7 +94,8 @@
         __asm__ volatile("msr " XSTR(name) ", %0\n\r" ::"r"(val));    \
     }
 
-#define SYSREG_GEN_ACCESSORS(reg) SYSREG_GEN_ACCESSORS_NAME(_##reg##_, reg)
+#define SYSREG_GEN_ACCESSORS_NAME(reg, name) SYSREG_GEN_ACCESSORS_INNER(_##reg##_, name)
+#define SYSREG_GEN_ACCESSORS(reg) SYSREG_GEN_ACCESSORS_INNER(_##reg##_, reg)
 
 SYSREG_GEN_ACCESSORS(esr_el2)
 SYSREG_GEN_ACCESSORS(elr_el2)
@@ -73,8 +110,18 @@ SYSREG_GEN_ACCESSORS(mpidr_el1)
 SYSREG_GEN_ACCESSORS(vmpidr_el2)
 SYSREG_GEN_ACCESSORS(cntvoff_el2)
 SYSREG_GEN_ACCESSORS(cntfrq_el0)
+#ifdef MEM_PROT_MPU
+/**
+ * Armv8-R Aarch64 cores such as cortex-R82 only have a hypervisor secure timer.
+ * So for this case we rename the secure timer to the "normal" one so we avoid
+ * confusing conditional compilation in the timer code.
+ */
+SYSREG_GEN_ACCESSORS_NAME(cnthp_cval_el2, cnthps_cval_el2)
+SYSREG_GEN_ACCESSORS_NAME(cnthp_ctl_el2, cnthps_ctl_el2)
+#else
 SYSREG_GEN_ACCESSORS(cnthp_cval_el2)
 SYSREG_GEN_ACCESSORS(cnthp_ctl_el2)
+#endif /* MEM_PROT_MPU */
 SYSREG_GEN_ACCESSORS(cntpct_el0)
 SYSREG_GEN_ACCESSORS(pmcr_el0)
 SYSREG_GEN_ACCESSORS(par_el1)
@@ -82,13 +129,16 @@ SYSREG_GEN_ACCESSORS(tcr_el2)
 SYSREG_GEN_ACCESSORS(ttbr0_el2)
 SYSREG_GEN_ACCESSORS(mair_el2)
 SYSREG_GEN_ACCESSORS(cptr_el2)
+SYSREG_GEN_ACCESSORS(hstr_el2)
 SYSREG_GEN_ACCESSORS(hcr_el2)
 SYSREG_GEN_ACCESSORS(vtcr_el2)
 SYSREG_GEN_ACCESSORS(vttbr_el2)
 SYSREG_GEN_ACCESSORS(id_aa64mmfr0_el1)
+SYSREG_GEN_ACCESSORS(id_aa64pfr0_el1)
 SYSREG_GEN_ACCESSORS(tpidr_el2)
 SYSREG_GEN_ACCESSORS(vsctlr_el2)
 SYSREG_GEN_ACCESSORS(sctlr_el2)
+SYSREG_GEN_ACCESSORS(spsr_el2)
 SYSREG_GEN_ACCESSORS(mpuir_el2)
 SYSREG_GEN_ACCESSORS(prselr_el2)
 SYSREG_GEN_ACCESSORS(prbar_el2)
@@ -151,9 +201,46 @@ SYSREG_GEN_ACCESSORS(contextidr_el1)
 SYSREG_GEN_ACCESSORS(tpidr_el0)
 SYSREG_GEN_ACCESSORS(tpidrro_el0)
 SYSREG_GEN_ACCESSORS(tpidr_el1)
+SYSREG_GEN_ACCESSORS(ifsr32_el2)
+SYSREG_GEN_ACCESSORS(spsr_el1)
 SYSREG_GEN_ACCESSORS(fpcr)
 SYSREG_GEN_ACCESSORS(fpexc32_el2)
 SYSREG_GEN_ACCESSORS(fpsr)
+
+SYSREG_GEN_ACCESSORS(prselr_el1)
+SYSREG_GEN_ACCESSORS(mpuir_el1)
+SYSREG_GEN_ACCESSORS(prbar0_el1)
+SYSREG_GEN_ACCESSORS(prbar1_el1)
+SYSREG_GEN_ACCESSORS(prbar2_el1)
+SYSREG_GEN_ACCESSORS(prbar3_el1)
+SYSREG_GEN_ACCESSORS(prbar4_el1)
+SYSREG_GEN_ACCESSORS(prbar5_el1)
+SYSREG_GEN_ACCESSORS(prbar6_el1)
+SYSREG_GEN_ACCESSORS(prbar7_el1)
+SYSREG_GEN_ACCESSORS(prbar8_el1)
+SYSREG_GEN_ACCESSORS(prbar9_el1)
+SYSREG_GEN_ACCESSORS(prbar10_el1)
+SYSREG_GEN_ACCESSORS(prbar11_el1)
+SYSREG_GEN_ACCESSORS(prbar12_el1)
+SYSREG_GEN_ACCESSORS(prbar13_el1)
+SYSREG_GEN_ACCESSORS(prbar14_el1)
+SYSREG_GEN_ACCESSORS(prbar15_el1)
+SYSREG_GEN_ACCESSORS(prlar0_el1)
+SYSREG_GEN_ACCESSORS(prlar1_el1)
+SYSREG_GEN_ACCESSORS(prlar2_el1)
+SYSREG_GEN_ACCESSORS(prlar3_el1)
+SYSREG_GEN_ACCESSORS(prlar4_el1)
+SYSREG_GEN_ACCESSORS(prlar5_el1)
+SYSREG_GEN_ACCESSORS(prlar6_el1)
+SYSREG_GEN_ACCESSORS(prlar7_el1)
+SYSREG_GEN_ACCESSORS(prlar8_el1)
+SYSREG_GEN_ACCESSORS(prlar9_el1)
+SYSREG_GEN_ACCESSORS(prlar10_el1)
+SYSREG_GEN_ACCESSORS(prlar11_el1)
+SYSREG_GEN_ACCESSORS(prlar12_el1)
+SYSREG_GEN_ACCESSORS(prlar13_el1)
+SYSREG_GEN_ACCESSORS(prlar14_el1)
+SYSREG_GEN_ACCESSORS(prlar15_el1)
 
 
 static inline void arm_dc_civac(vaddr_t cache_addr)

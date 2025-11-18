@@ -23,10 +23,10 @@ static cpuid_t gic_cpu_map[GIC_MAX_TARGETS];
 
 size_t gich_num_lrs()
 {
-    return ((gich->VTR & GICH_VTR_MSK) >> GICH_VTR_OFF) + 1;
+    return ((gich->VTR & GICH_VTR_LISTREGS_MSK) >> GICH_VTR_LISTREGS_OFF) + 1;
 }
 
-size_t gic_num_aprs() {
+size_t gich_num_aprs() {
     return 1;
 }
 

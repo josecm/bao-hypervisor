@@ -125,7 +125,14 @@ static bool vmm_alloc_vm(struct vm_allocation* vm_alloc, struct vm_config* vm_co
     total_size = vcpus_offset + (vm_config->platform.cpu_num * sizeof(struct vcpu));
     total_size = ALIGN(total_size, PAGE_SIZE);
 
+    /**
+     * FIXME: this conditional compilation must be removed and both variants must use the same section.
+     */
+#ifdef MEM_PROT_MPU
+    void* allocation = mem_alloc_page(NUM_PAGES(total_size), SEC_HYP_VM, MEM_ALIGN_NOT_REQ);
+#else
     void* allocation = mem_alloc_page(NUM_PAGES(total_size), SEC_HYP_GLOBAL, MEM_ALIGN_NOT_REQ);
+#endif
     if (allocation == NULL) {
         return false;
     }
