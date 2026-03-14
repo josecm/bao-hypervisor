@@ -63,10 +63,10 @@
 #define PT_VM_REC_IND             (pt_nentries(&cpu()->as.pt, 0) - 2)
 
 #define PTE_INVALID               (0)
-#define PTE_HYP_FLAGS             (PTE_GLOBAL | PTE_ACCESS | PTE_DIRTY)
+#define PTE_HYP_FLAGS             (PTE_GLOBAL | PTE_ACCESS | PTE_DIRTY | PTE_RWX)
 #define PTE_HYP_DEV_FLAGS         PTE_HYP_FLAGS
 
-#define PTE_VM_FLAGS              (PTE_ACCESS | PTE_DIRTY | PTE_USER)
+#define PTE_VM_FLAGS              (PTE_ACCESS | PTE_DIRTY | PTE_USER | PTE_RWX)
 #define PTE_VM_DEV_FLAGS          PTE_VM_FLAGS
 
 #ifndef __ASSEMBLER__
@@ -89,7 +89,7 @@ struct page_table_arch {
 static inline void pte_set(pte_t* pte, paddr_t addr, pte_type_t type, pte_flags_t flags)
 {
     *pte = ((addr & PTE_ADDR_MSK) >> 2) |
-        (((type == PTE_TABLE) ? type : (type | flags)) & PTE_FLAGS_MSK);
+        (((type == PTE_TABLE) ? type : ((type & ~PTE_RWX) | flags)) & PTE_FLAGS_MSK);
 }
 
 static inline paddr_t pte_addr(pte_t* pte)
