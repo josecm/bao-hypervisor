@@ -77,8 +77,12 @@ vaddr_t mem_map_cpy(struct addr_space* ass, struct addr_space* asd, as_sec_t asd
     vaddr_t vas, vaddr_t vad, size_t num_pages);
 bool pp_alloc(struct page_pool* pool, size_t num_pages, bool aligned, struct ppages* ppages);
 
-static inline mem_flags_t mem_perm_to_flags(mem_perm_t perm)
+static inline mem_flags_t mem_perm_to_flags(const struct addr_space* as, mem_perm_t perm)
 {
+    if (as->type == AS_HYP) {
+        return PTE_HYP_FLAGS;
+    }
+
     switch (perm) {
         case MEM_RX: return PTE_VM_RX_FLAGS;
         case MEM_RW: return PTE_VM_RW_FLAGS;

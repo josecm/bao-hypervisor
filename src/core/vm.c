@@ -73,7 +73,7 @@ static void vm_map_mem_region(struct vm* vm, struct vm_mem_region* reg)
     }
 
     vaddr_t va = mem_alloc_map(&vm->as, SEC_VM_ANY, pa_ptr, (vaddr_t)reg->base, n,
-        mem_perm_to_flags(reg->perms));
+        mem_perm_to_flags(&vm->as, reg->perms));
     if (va != (vaddr_t)reg->base) {
         ERROR("failed to allocate vm's region at 0x%lx\n", reg->base);
     }
@@ -94,7 +94,7 @@ static void vm_map_img_rgn_inplace(struct vm* vm, const struct vm_config* vm_con
     /* map img in place */
     struct ppages pa_img = mem_ppages_get(vm_config->image.load_addr, n_img);
 
-    mem_flags_t flags = mem_perm_to_flags(reg->perms);
+    mem_flags_t flags = mem_perm_to_flags(&vm->as, reg->perms);
     mem_alloc_map(&vm->as, SEC_VM_ANY, NULL, (vaddr_t)reg->base, n_before, flags);
     if (all_clrs(vm->as.colors)) {
         /* map img in place */
