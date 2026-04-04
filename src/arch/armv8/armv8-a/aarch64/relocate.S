@@ -55,7 +55,7 @@ switch_space:
     adr x3, _image_start
     PTE_INDEX_ASM x4, x3, 1
     adr x5, root_l1_flat_pt
-    add x3, x3, #(PTE_HYP_FLAGS | PTE_TABLE)
+    add x3, x3, #(MEM_HYP_FLAGS | PTE_TABLE)
     str x3, [x5, x4]
 
     /**

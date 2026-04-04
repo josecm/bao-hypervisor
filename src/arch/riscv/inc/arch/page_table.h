@@ -63,14 +63,14 @@
 #define PT_VM_REC_IND             (pt_nentries(&cpu()->as.pt, 0) - 2)
 
 #define PTE_INVALID               (0)
-#define PTE_HYP_FLAGS             (PTE_RWX | PTE_GLOBAL | PTE_ACCESS | PTE_DIRTY)
-#define PTE_HYP_DEV_FLAGS         PTE_HYP_FLAGS
+#define MEM_HYP_FLAGS             (PTE_RWX | PTE_GLOBAL | PTE_ACCESS | PTE_DIRTY)
+#define MEM_HYP_DEV_FLAGS         MEM_HYP_FLAGS
 
-#define PTE_VM_FLAGS              (PTE_RWX | PTE_ACCESS | PTE_DIRTY | PTE_USER)
-#define PTE_VM_RX_FLAGS           (PTE_RX  | PTE_ACCESS | PTE_DIRTY | PTE_USER)
-#define PTE_VM_RW_FLAGS           (PTE_RW  | PTE_ACCESS | PTE_DIRTY | PTE_USER)
-#define PTE_VM_R_FLAGS            (PTE_RO  | PTE_ACCESS | PTE_DIRTY | PTE_USER)
-#define PTE_VM_DEV_FLAGS          PTE_VM_FLAGS
+#define MEM_VM_FLAGS              (PTE_RWX | PTE_ACCESS | PTE_DIRTY | PTE_USER)
+#define MEM_VM_RX_FLAGS           (PTE_RX  | PTE_ACCESS | PTE_DIRTY | PTE_USER)
+#define MEM_VM_RW_FLAGS           (PTE_RW  | PTE_ACCESS | PTE_DIRTY | PTE_USER)
+#define MEM_VM_R_FLAGS            (PTE_RO  | PTE_ACCESS | PTE_DIRTY | PTE_USER)
+#define MEM_VM_DEV_FLAGS          MEM_VM_FLAGS
 
 #ifndef __ASSEMBLER__
 

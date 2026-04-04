@@ -33,7 +33,7 @@ static inline void as_map_physical_identity(struct addr_space* as)
         paddr_t addr = base;
         for (unsigned int j = 0; j < num_entries; j++) {
             size_t index = pt_getpteindex_by_va(&as->pt, (vaddr_t)addr, lvl);
-            pte_set(&pt[index], addr, PTE_SUPERPAGE, PTE_HYP_FLAGS);
+            pte_set(&pt[index], addr, PTE_SUPERPAGE, MEM_HYP_FLAGS);
             addr += lvl_size;
         }
     }
