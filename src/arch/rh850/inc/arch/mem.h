@@ -49,12 +49,12 @@ struct addr_space_arch {
 
 typedef mpat_flags_t mem_flags_t;
 
-#define PTE_INVALID ((mem_flags_t){ .e = 0 })
+#define MEM_FLAGS_INVALID ((mem_flags_t){ .e = 0 })
 
 /**
  * Only SPID in MPID7 can read and execute this region
  */
-#define PTE_HYP_FLAGS_CODE \
+#define MEM_HYP_FLAGS_CODE \
     ((mem_flags_t){        \
         .ur = 1,           \
         .uw = 0,           \
@@ -86,7 +86,7 @@ typedef mpat_flags_t mem_flags_t;
 /**
  * Only SPID in MPID7 can read and write this region
  */
-#define PTE_HYP_FLAGS \
+#define MEM_HYP_FLAGS \
     ((mem_flags_t){   \
         .ur = 1,      \
         .uw = 1,      \
@@ -118,7 +118,7 @@ typedef mpat_flags_t mem_flags_t;
 /**
  * Only the SPID in MPID7 can read write this region
  */
-#define PTE_HYP_DEV_FLAGS \
+#define MEM_HYP_DEV_FLAGS \
     ((mem_flags_t){       \
         .ur = 1,          \
         .uw = 1,          \
@@ -150,7 +150,7 @@ typedef mpat_flags_t mem_flags_t;
 /**
  * Only SPIDs in MPID6 can read, write or execute this region
  */
-#define PTE_VM_FLAGS \
+#define MEM_VM_FLAGS \
     ((mem_flags_t){  \
         .ur = 1,     \
         .uw = 1,     \
@@ -182,7 +182,7 @@ typedef mpat_flags_t mem_flags_t;
 /**
  * Only SPIDs in MPID6 can read and execute this region
  */
-#define PTE_VM_RX_FLAGS \
+#define MEM_VM_RX_FLAGS \
     ((mem_flags_t){     \
         .ur = 1,        \
         .uw = 0,        \
@@ -214,7 +214,7 @@ typedef mpat_flags_t mem_flags_t;
 /**
  * Only SPIDs in MPID6 can read and write this region (no execute)
  */
-#define PTE_VM_RW_FLAGS \
+#define MEM_VM_RW_FLAGS \
     ((mem_flags_t){     \
         .ur = 1,        \
         .uw = 1,        \
@@ -246,7 +246,7 @@ typedef mpat_flags_t mem_flags_t;
 /**
  * Only SPIDs in MPID6 can read this region (no write, no execute)
  */
-#define PTE_VM_R_FLAGS  \
+#define MEM_VM_R_FLAGS  \
     ((mem_flags_t){     \
         .ur = 1,        \
         .uw = 0,        \
@@ -278,7 +278,7 @@ typedef mpat_flags_t mem_flags_t;
 /**
  * Only SPIDs in MPID6 can read and write this region
  */
-#define PTE_VM_DEV_FLAGS \
+#define MEM_VM_DEV_FLAGS \
     ((mem_flags_t){      \
         .ur = 1,         \
         .uw = 1,         \

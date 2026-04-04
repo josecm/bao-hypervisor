@@ -42,7 +42,7 @@ boot_arch_profile_init:
 	adr x4, root_l1_flat_pt
 	add x4, x4, x18
 	PTE_INDEX_ASM x5, x1, 1
-	add x6, x1, #(PTE_HYP_FLAGS | PTE_SUPERPAGE)
+	add x6, x1, #(MEM_HYP_FLAGS | PTE_SUPERPAGE)
 	str x6, [x4, x5]
 
 	/* Set global root mappings for hypervisor image */
@@ -52,7 +52,7 @@ boot_arch_profile_init:
 	ldr x5, =(PTE_INDEX(1, BAO_VAS_BASE)*8)
 	adr x6, root_l2_pt
 	add x6, x6, x18
-	add x6, x6, #(PTE_HYP_FLAGS | PTE_TABLE)
+	add x6, x6, #(MEM_HYP_FLAGS | PTE_TABLE)
 	str x6, [x4, x5]
 
 	adr x4, root_l2_pt
@@ -60,7 +60,7 @@ boot_arch_profile_init:
 	ldr x5, =(PTE_INDEX(2, BAO_VAS_BASE)*8)
 	adr x6, root_l3_pt
 	add x6, x6, x18
-	add x6, x6, #(PTE_HYP_FLAGS | PTE_TABLE)
+	add x6, x6, #(MEM_HYP_FLAGS | PTE_TABLE)
 	str x6, [x4, x5]
 
 	adr x4, root_l3_pt
@@ -68,7 +68,7 @@ boot_arch_profile_init:
 	ldr x7, =_image_start
 	ldr x8, =_image_load_end
 	adr x6, _image_start
-	add x6, x6, #(PTE_HYP_FLAGS | PTE_PAGE)
+	add x6, x6, #(MEM_HYP_FLAGS | PTE_PAGE)
 1:
 	cmp	x7, x8
 	b.ge 2f
@@ -86,7 +86,7 @@ boot_arch_profile_init:
     ldr x10, =BAO_VAS_BASE
     sub x6, x6, x10
     add x6, x6, x1
-	add x6, x6, #(PTE_HYP_FLAGS | PTE_PAGE)
+	add x6, x6, #(MEM_HYP_FLAGS | PTE_PAGE)
 	b 1b
 3:
 	adr x5, _boot_barrier
@@ -129,37 +129,37 @@ map_cpu:
 	PTE_INDEX_ASM x5, x1, 0
 	adr x6, root_l1_flat_pt
 	add x6, x6, x18
-	add x6, x6, #(PTE_HYP_FLAGS | PTE_TABLE)
+	add x6, x6, #(MEM_HYP_FLAGS | PTE_TABLE)
 	str x6, [x4, x5]
 
 	ldr x5, =(PTE_INDEX(0, BAO_VAS_BASE)*8)
 	adr x6, root_l1_pt
 	add x6, x6, x18
-	add x6, x6, #(PTE_HYP_FLAGS | PTE_TABLE)
+	add x6, x6, #(MEM_HYP_FLAGS | PTE_TABLE)
 	str x6, [x4, x5]
 
 	ldr x5, =(PTE_INDEX(0, BAO_CPU_BASE)*8)
 	add x6, x4, #PT_SIZE
-	add x6, x6, #(PTE_HYP_FLAGS | PTE_TABLE)
+	add x6, x6, #(MEM_HYP_FLAGS | PTE_TABLE)
 	str x6, [x4, x5]
 
 	add x4, x4, #PT_SIZE
 	ldr x5, =(PTE_INDEX(1, BAO_CPU_BASE)*8)
 	add x6, x4, #PT_SIZE
-	add x6, x6, #(PTE_HYP_FLAGS | PTE_TABLE)
+	add x6, x6, #(MEM_HYP_FLAGS | PTE_TABLE)
 	str x6, [x4, x5]
 
 	add x4, x4, #PT_SIZE
 	ldr x5, =(PTE_INDEX(2, BAO_CPU_BASE)*8)
 	add x6, x4, #PT_SIZE
-	add x6, x6, #(PTE_HYP_FLAGS | PTE_TABLE)
+	add x6, x6, #(MEM_HYP_FLAGS | PTE_TABLE)
 	str x6, [x4, x5]
 
 	add x4, x4, #PT_SIZE
 	ldr x7, =BAO_CPU_BASE
 	add x8, x7, #(CPU_SIZE+PT_SIZE)
 	mov x6, x3
-	add x6, x6, #(PTE_HYP_FLAGS | PTE_TABLE)
+	add x6, x6, #(MEM_HYP_FLAGS | PTE_TABLE)
 1:
 	cmp	x7, x8
 	b.ge setup_cpu
@@ -274,7 +274,7 @@ warm_boot:
 	PTE_INDEX_ASM x1, x1, 0
 	add x3, x3, x1
 	dc civac, x3  //we invalidated l1$, but make sure the pte is not in l2$
-	add x5, x5, #(PTE_HYP_FLAGS | PTE_TABLE)
+	add x5, x5, #(MEM_HYP_FLAGS | PTE_TABLE)
 	str x5, [x3]
 
 	/* Install vector table virtual address*/

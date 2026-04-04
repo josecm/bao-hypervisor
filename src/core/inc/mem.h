@@ -80,14 +80,14 @@ bool pp_alloc(struct page_pool* pool, size_t num_pages, bool aligned, struct ppa
 static inline mem_flags_t mem_perm_to_flags(const struct addr_space* as, mem_perm_t perm)
 {
     if (as->type == AS_HYP) {
-        return PTE_HYP_FLAGS;
+        return MEM_HYP_FLAGS;
     }
 
     switch (perm) {
-        case MEM_RX: return PTE_VM_RX_FLAGS;
-        case MEM_RW: return PTE_VM_RW_FLAGS;
-        case MEM_R:  return PTE_VM_R_FLAGS;
-        default:     return PTE_VM_FLAGS;
+        case MEM_RX: return MEM_VM_RX_FLAGS;
+        case MEM_RW: return MEM_VM_RW_FLAGS;
+        case MEM_R:  return MEM_VM_R_FLAGS;
+        default:     return MEM_VM_FLAGS;
     }
 }
 

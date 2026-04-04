@@ -174,7 +174,7 @@ void* mem_alloc_page(size_t num_pages, as_sec_t sec, bool phys_aligned)
     struct ppages ppages = mem_alloc_ppages(cpu()->as.colors, num_pages, phys_aligned);
 
     if (ppages.num_pages == num_pages) {
-        vpage = mem_alloc_map(&cpu()->as, sec, &ppages, INVALID_VA, num_pages, PTE_HYP_FLAGS);
+        vpage = mem_alloc_map(&cpu()->as, sec, &ppages, INVALID_VA, num_pages, MEM_HYP_FLAGS);
     }
 
     return (void*)vpage;

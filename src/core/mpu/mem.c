@@ -81,7 +81,7 @@ static void mem_vmpu_clear_entry(struct addr_space* as, mpid_t mpid)
 
     mpe->region.base = 0;
     mpe->region.size = 0;
-    mpe->region.mem_flags = PTE_INVALID;
+    mpe->region.mem_flags = MEM_FLAGS_INVALID;
     mpe->region.as_sec = SEC_UNKNOWN;
     mpe->state = MPE_S_INVALID;
     mpe->lock = false;
@@ -118,7 +118,7 @@ static void mem_vmpu_deallocate_entry(struct addr_space* as, mpid_t mpid)
 
     mpe->region.base = 0;
     mpe->region.size = 0;
-    mpe->region.mem_flags = PTE_INVALID;
+    mpe->region.mem_flags = MEM_FLAGS_INVALID;
     mpe->region.as_sec = SEC_UNKNOWN;
     mpe->state = MPE_S_FREE;
     mpe->lock = false;
@@ -173,9 +173,9 @@ static void mem_init_boot_regions(void)
         .base = image_start,
         .size = (size_t)(first_region_end - image_start),
 #ifdef MEM_NON_UNIFIED
-        .mem_flags = PTE_HYP_FLAGS_CODE,
+        .mem_flags = MEM_HYP_FLAGS_CODE,
 #else
-        .mem_flags = PTE_HYP_FLAGS,
+        .mem_flags = MEM_HYP_FLAGS,
 #endif
         .as_sec = SEC_HYP_IMAGE,
     };
@@ -190,7 +190,7 @@ static void mem_init_boot_regions(void)
             .base = image_noload_start,
             .size = (size_t)image_end - image_noload_start,
 #endif
-            .mem_flags = PTE_HYP_FLAGS,
+            .mem_flags = MEM_HYP_FLAGS,
             .as_sec = SEC_HYP_IMAGE,
         };
         mem_map(&cpu()->as, &mpr, MEM_DONT_BROADCAST, MEM_LOCKED);
@@ -199,7 +199,7 @@ static void mem_init_boot_regions(void)
     mpr = (struct mp_region){
         .base = (vaddr_t)cpu(),
         .size = ALIGN(sizeof(struct cpu), PAGE_SIZE),
-        .mem_flags = PTE_HYP_FLAGS,
+        .mem_flags = MEM_HYP_FLAGS,
         .as_sec = SEC_HYP_PRIVATE,
     };
     mem_map(&cpu()->as, &mpr, MEM_DONT_BROADCAST, MEM_LOCKED);
@@ -745,5 +745,5 @@ vaddr_t mem_alloc_map_dev(struct addr_space* as, as_sec_t section, vaddr_t at, p
 {
     struct ppages temp_page = mem_ppages_get(pa, num_pages);
     return mem_alloc_map(as, section, &temp_page, at, num_pages,
-        as->type == AS_HYP ? PTE_HYP_DEV_FLAGS : PTE_VM_DEV_FLAGS);
+        as->type == AS_HYP ? MEM_HYP_DEV_FLAGS : MEM_VM_DEV_FLAGS);
 }

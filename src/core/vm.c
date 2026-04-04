@@ -133,7 +133,7 @@ static void vm_install_image(struct vm* vm, struct vm_mem_region* reg)
     size_t img_num_pages = NUM_PAGES(vm->config->image.size);
     struct ppages img_ppages = mem_ppages_get(vm->config->image.load_addr, img_num_pages);
     vaddr_t src_va = mem_alloc_map(&cpu()->as, SEC_HYP_PRIVATE, &img_ppages, INVALID_VA,
-        img_num_pages, PTE_HYP_FLAGS);
+        img_num_pages, MEM_HYP_FLAGS);
     vaddr_t dst_va = mem_map_cpy(&vm->as, &cpu()->as, SEC_HYP_PRIVATE, vm->config->image.base_addr,
         INVALID_VA, img_num_pages);
     memcpy((void*)dst_va, (void*)src_va, vm->config->image.size);
