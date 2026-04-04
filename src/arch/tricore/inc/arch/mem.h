@@ -27,6 +27,9 @@ struct addr_space_arch {
 #define PTE_HYP_FLAGS            PTE_FLAGS(1, 1, 1)
 #define PTE_HYP_DEV_FLAGS        PTE_FLAGS(1, 1, 0)
 #define PTE_VM_FLAGS             PTE_FLAGS(1, 1, 1)
+#define PTE_VM_RX_FLAGS          PTE_FLAGS(0, 1, 1)
+#define PTE_VM_RW_FLAGS          PTE_FLAGS(1, 1, 0)
+#define PTE_VM_R_FLAGS           PTE_FLAGS(0, 1, 0)
 #define PTE_VM_DEV_FLAGS         PTE_FLAGS(1, 1, 0)
 #define PTE_HYP_FLAGS_CODE       PTE_FLAGS(0, 1, 1)
 

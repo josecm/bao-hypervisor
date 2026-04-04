@@ -72,7 +72,8 @@ static void vm_map_mem_region(struct vm* vm, struct vm_mem_region* reg)
         pa_ptr = NULL;
     }
 
-    vaddr_t va = mem_alloc_map(&vm->as, SEC_VM_ANY, pa_ptr, (vaddr_t)reg->base, n, PTE_VM_FLAGS);
+    vaddr_t va = mem_alloc_map(&vm->as, SEC_VM_ANY, pa_ptr, (vaddr_t)reg->base, n,
+        mem_perm_to_flags(reg->perms));
     if (va != (vaddr_t)reg->base) {
         ERROR("failed to allocate vm's region at 0x%lx\n", reg->base);
     }
@@ -93,18 +94,19 @@ static void vm_map_img_rgn_inplace(struct vm* vm, const struct vm_config* vm_con
     /* map img in place */
     struct ppages pa_img = mem_ppages_get(vm_config->image.load_addr, n_img);
 
-    mem_alloc_map(&vm->as, SEC_VM_ANY, NULL, (vaddr_t)reg->base, n_before, PTE_VM_FLAGS);
+    mem_flags_t flags = mem_perm_to_flags(reg->perms);
+    mem_alloc_map(&vm->as, SEC_VM_ANY, NULL, (vaddr_t)reg->base, n_before, flags);
     if (all_clrs(vm->as.colors)) {
         /* map img in place */
-        mem_alloc_map(&vm->as, SEC_VM_ANY, &pa_img, img_base, n_img, PTE_VM_FLAGS);
+        mem_alloc_map(&vm->as, SEC_VM_ANY, &pa_img, img_base, n_img, flags);
         /* we are mapping in place, config is already reserved */
     } else {
         /* recolour img */
-        mem_map_reclr(&vm->as, img_base, &pa_img, n_img, PTE_VM_FLAGS);
+        mem_map_reclr(&vm->as, img_base, &pa_img, n_img, flags);
     }
     /* map pages after img */
     mem_alloc_map(&vm->as, SEC_VM_ANY, NULL, img_base + NUM_PAGES(img_size) * PAGE_SIZE, n_aft,
-        PTE_VM_FLAGS);
+        flags);
 }
 
 static void vm_install_image(struct vm* vm, struct vm_mem_region* reg)
@@ -200,6 +202,7 @@ static void vm_init_ipc(struct vm* vm, const struct vm_config* vm_config)
             .place_phys = true,
             .phys = shmem->phys,
             .colors = shmem->colors,
+            .perms = ipc->perms,
         };
 
         vm_map_mem_region(vm, &reg);

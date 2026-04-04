@@ -13,6 +13,7 @@ struct ipc {
     paddr_t base;
     size_t size;
     size_t shmem_id;
+    mem_perm_t perms;
     size_t interrupt_num;
     irqid_t* interrupts;
 };

@@ -180,6 +180,102 @@ typedef mpat_flags_t mem_flags_t;
     })
 
 /**
+ * Only SPIDs in MPID6 can read and execute this region
+ */
+#define PTE_VM_RX_FLAGS \
+    ((mem_flags_t){     \
+        .ur = 1,        \
+        .uw = 0,        \
+        .ux = 1,        \
+        .sr = 1,        \
+        .sw = 0,        \
+        .sx = 1,        \
+        .e = 1,         \
+        .rg = 0,        \
+        .wg = 0,        \
+        .rmpid0 = 0,    \
+        .rmpid1 = 0,    \
+        .rmpid2 = 0,    \
+        .rmpid3 = 0,    \
+        .rmpid4 = 0,    \
+        .rmpid5 = 0,    \
+        .rmpid6 = 1,    \
+        .rmpid7 = 0,    \
+        .wmpid0 = 0,    \
+        .wmpid1 = 0,    \
+        .wmpid2 = 0,    \
+        .wmpid3 = 0,    \
+        .wmpid4 = 0,    \
+        .wmpid5 = 0,    \
+        .wmpid6 = 0,    \
+        .wmpid7 = 0,    \
+    })
+
+/**
+ * Only SPIDs in MPID6 can read and write this region (no execute)
+ */
+#define PTE_VM_RW_FLAGS \
+    ((mem_flags_t){     \
+        .ur = 1,        \
+        .uw = 1,        \
+        .ux = 0,        \
+        .sr = 1,        \
+        .sw = 1,        \
+        .sx = 0,        \
+        .e = 1,         \
+        .rg = 0,        \
+        .wg = 0,        \
+        .rmpid0 = 0,    \
+        .rmpid1 = 0,    \
+        .rmpid2 = 0,    \
+        .rmpid3 = 0,    \
+        .rmpid4 = 0,    \
+        .rmpid5 = 0,    \
+        .rmpid6 = 1,    \
+        .rmpid7 = 0,    \
+        .wmpid0 = 0,    \
+        .wmpid1 = 0,    \
+        .wmpid2 = 0,    \
+        .wmpid3 = 0,    \
+        .wmpid4 = 0,    \
+        .wmpid5 = 0,    \
+        .wmpid6 = 1,    \
+        .wmpid7 = 0,    \
+    })
+
+/**
+ * Only SPIDs in MPID6 can read this region (no write, no execute)
+ */
+#define PTE_VM_R_FLAGS  \
+    ((mem_flags_t){     \
+        .ur = 1,        \
+        .uw = 0,        \
+        .ux = 0,        \
+        .sr = 1,        \
+        .sw = 0,        \
+        .sx = 0,        \
+        .e = 1,         \
+        .rg = 0,        \
+        .wg = 0,        \
+        .rmpid0 = 0,    \
+        .rmpid1 = 0,    \
+        .rmpid2 = 0,    \
+        .rmpid3 = 0,    \
+        .rmpid4 = 0,    \
+        .rmpid5 = 0,    \
+        .rmpid6 = 1,    \
+        .rmpid7 = 0,    \
+        .wmpid0 = 0,    \
+        .wmpid1 = 0,    \
+        .wmpid2 = 0,    \
+        .wmpid3 = 0,    \
+        .wmpid4 = 0,    \
+        .wmpid5 = 0,    \
+        .wmpid6 = 0,    \
+        .wmpid7 = 0,    \
+    })
+
+/**
  * Only SPIDs in MPID6 can read and write this region
  */
 #define PTE_VM_DEV_FLAGS \

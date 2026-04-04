@@ -21,10 +21,12 @@
 #define MEM_FREE_PAGES      (true)
 #define MEM_DONT_FREE_PAGES (false)
 
-enum MEM_PERMISSIONS {
-    MEM_RWX = 0, // This variant always has to be zero and therefore the first one
+typedef enum {
+    MEM_RWX = 0, /* must stay 0 — zero-init of config structs means full access by default */
     MEM_RX,
-};
+    MEM_RW,
+    MEM_R,
+} mem_perm_t;
 
 struct ppages {
     paddr_t base;
@@ -45,7 +47,7 @@ struct page_pool {
 struct mem_region {
     paddr_t base;
     size_t size;
-    enum MEM_PERMISSIONS perms;
+    mem_perm_t perms;
     struct page_pool page_pool;
 };
 
@@ -74,6 +76,16 @@ bool mem_map_reclr(struct addr_space* as, vaddr_t va, struct ppages* ppages, siz
 vaddr_t mem_map_cpy(struct addr_space* ass, struct addr_space* asd, as_sec_t asd_section,
     vaddr_t vas, vaddr_t vad, size_t num_pages);
 bool pp_alloc(struct page_pool* pool, size_t num_pages, bool aligned, struct ppages* ppages);
+
+static inline mem_flags_t mem_perm_to_flags(mem_perm_t perm)
+{
+    switch (perm) {
+        case MEM_RX: return PTE_VM_RX_FLAGS;
+        case MEM_RW: return PTE_VM_RW_FLAGS;
+        case MEM_R:  return PTE_VM_R_FLAGS;
+        default:     return PTE_VM_FLAGS;
+    }
+}
 
 void mem_prot_init(void);
 size_t mem_cpu_boot_alloc_size(void);
