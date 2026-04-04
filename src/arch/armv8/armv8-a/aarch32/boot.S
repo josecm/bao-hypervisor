@@ -50,7 +50,7 @@ boot_arch_profile_init:
     ldr r4, =_image_start
     ldr r5, =_image_load_end
     get_phys_addr r6, r7, _image_start
-    mov r7, #(MEM_HYP_FLAGS | PTE_PAGE)
+    mov r7, #(PTE_HYP_FLAGS | PTE_PAGE)
     orr r6, r6, r7
 1:
     cmp r4, r5
@@ -65,7 +65,7 @@ boot_arch_profile_init:
     cmp r4, r5
     bge 3f
     get_phys_addr r6, r7, _image_noload_start
-    mov r7, #(MEM_HYP_FLAGS | PTE_PAGE)
+    mov r7, #(PTE_HYP_FLAGS | PTE_PAGE)
     orr r6, r6, r7
     b 1b
 
@@ -110,7 +110,7 @@ map_cpu:
 
     ldr r5, =(PTE_INDEX(1, BAO_VAS_BASE)*8)
     add r6, r4, #PT_SIZE // get address of l2 page table
-    mov r7, #(MEM_HYP_FLAGS | PTE_TABLE)
+    mov r7, #(PTE_HYP_FLAGS | PTE_TABLE)
     orr r6, r6, r7
     str r6, [r4, r5]
 
@@ -119,13 +119,13 @@ map_cpu:
     ldr r5, =(PTE_INDEX(2, BAO_VAS_BASE)*8)
     get_phys_addr r6, r7, root_l3_pt // shared l3 page table (for image)
     add r6, r6, r10
-    mov r7, #(MEM_HYP_FLAGS | PTE_TABLE)
+    mov r7, #(PTE_HYP_FLAGS | PTE_TABLE)
     orr r6, r6, r7
     str r6, [r4, r5]
 
     ldr r5, =(PTE_INDEX(2, BAO_CPU_BASE)*8)
     add r6, r4, #PT_SIZE // cpuu l3 page table
-    mov r7, #(MEM_HYP_FLAGS | PTE_TABLE)
+    mov r7, #(PTE_HYP_FLAGS | PTE_TABLE)
     orr r6, r6, r7
     str r6, [r4, r5]
 
@@ -133,7 +133,7 @@ map_cpu:
 
     ldr r5, =(PTE_INDEX(3, BAO_CPU_BASE)*8)
 	mov r6, r3
-    mov r7, #(MEM_HYP_FLAGS | PTE_PAGE)
+    mov r7, #(PTE_HYP_FLAGS | PTE_PAGE)
 	add r6, r6, r7
 	ldr r7, =BAO_CPU_BASE
 	add r8, r7, #(CPU_SIZE+PT_SIZE)

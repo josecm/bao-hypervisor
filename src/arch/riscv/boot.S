@@ -192,7 +192,7 @@ _boot_lock:
     PTE_PTR     t2, t0, (PT_LVLS - 1), t2
 
     la          t0, _image_start
-    PTE_FILL    t0, t0, MEM_HYP_FLAGS | PTE_PAGE
+    PTE_FILL    t0, t0, PTE_HYP_FLAGS | PTE_PAGE
 1:
     bge     t1, t2, 2f
     STORE   t0, 0(t1)
@@ -210,7 +210,7 @@ _boot_lock:
     PTE_PTR     t2, t0, (PT_LVLS - 1), t2
     bge         t1, t2, 3f
     la          t0, _image_noload_start
-    PTE_FILL    t0, t0, MEM_HYP_FLAGS | PTE_PAGE
+    PTE_FILL    t0, t0, PTE_HYP_FLAGS | PTE_PAGE
     j 1b
 3:
     fence   w, w
@@ -268,7 +268,7 @@ map_cpu:
     add         t1, t1, t4
     li          t2, BAO_CPU_BASE
     PTE_PTR     t1, t1, 2, t2
-    PTE_FILL    t2, t0, MEM_HYP_FLAGS | PTE_PAGE
+    PTE_FILL    t2, t0, PTE_HYP_FLAGS | PTE_PAGE
     li          t3, CPU_SIZE+PT_SIZE
 1:
     blez    t3, setup_cpu
