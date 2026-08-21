@@ -92,16 +92,17 @@ boot_arch_profile_init:
 	adr x5, _boot_barrier
 	mov x4, #1
 	str x4, [x5]
-	//	dsb // arguments?
+	dsb ish
 	sev
 	b 	map_cpu
 
 wait_for_bsp:
 /* wait fot the bsp to finish up global mappings */
-	wfe
 	ldr x4, _boot_barrier
 	cmp x4, #1
-	b.lt wait_for_bsp
+	b.ge map_cpu
+	wfe
+	b wait_for_bsp
 
 map_cpu:
 	/**

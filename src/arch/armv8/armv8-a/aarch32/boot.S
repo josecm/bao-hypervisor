@@ -77,15 +77,17 @@ _barrier: .4byte 0
 	get_phys_addr r5, r4, _barrier
     mov r4, #1
     str r4, [r5]
-    sev 
+    dsb
+    sev
     b map_cpu
 
 wait_for_bsp:
     get_phys_addr r5, r4, _barrier
     ldr r4, [r5]
     cmp r4, #1
+    bge map_cpu
     wfe
-    blt wait_for_bsp
+    b wait_for_bsp
 
 map_cpu:
 
