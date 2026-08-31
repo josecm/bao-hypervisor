@@ -160,6 +160,15 @@ static void vgic_add_spilled(struct vcpu* vcpu, struct vgic_int* interrupt)
         }
         list_push(spilled_list, (node_t*)interrupt);
         interrupt->in_spilled = true;
+    }
+
+    /**
+     * NPIE exists to wake the LR refill when a spilled pending interrupt is
+     * waiting for a slot, so it is armed based on the interrupt's pending
+     * state rather than on the insertion: an already spilled active interrupt
+     * that just became pending must arm it as well.
+     */
+    if (interrupt->in_spilled && ((vgic_get_state(interrupt) & PEND) != 0U)) {
         gich_set_hcr(gich_get_hcr() | GICH_HCR_NPIE_BIT);
     }
     spin_unlock(&vcpu->vm->arch.vgic_spilled_lock);
